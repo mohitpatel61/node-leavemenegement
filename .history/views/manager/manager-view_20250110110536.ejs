@@ -1,0 +1,153 @@
+<%- contentFor('body') %>
+    <div class="container-fluid px-4">
+        <h1 class="mt-4">Manager Details</h1>
+        <ol class="breadcrumb mb-4">
+            <li class="breadcrumb-item active">Manager Details</li>
+        </ol>
+
+        <!-- Manager Details Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-user-circle me-1"></i> Manager Details
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Name:</h5>
+                        <p><%= `${managerDetails.first_name} ${managerDetails.last_name}` %></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Email:</h5>
+                        <p><%= managerDetails.email %></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Department:</h5>
+                        <p><%= managerDetails.department.department_name %></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Role:</h5>
+                        <p><%= managerDetails.role %></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Pin Code:</h5>
+                        <p><%= managerDetails.pin_code %></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Address:</h5>
+                        <p><%= managerDetails.address %></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manager Leave Details Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-calendar-alt me-1"></i> My Leaves
+            </div>
+            <div class="card-body">
+                <% managerLeaves.forEach(function(managerLeave) { %>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6>Leave Type:</h6>
+                            <p><%= managerLeave.leave.leave_type %></p>
+                        </div>
+                        <div class="col-md-3">
+                            <h6>Total Allocated:</h6>
+                            <p><%= managerLeave.assigned_leaves %></p>
+                        </div>
+                        <div class="col-md-3">
+                            <h6>Total Used:</h6>
+                            <p><%= managerLeave.used_leaves %></p>
+                        </div>
+                        <div class="col-md-3">
+                            <h6>Balance:</h6>
+                            <p><%= managerLeave.assigned_leaves - managerLeave.used_leaves %></p>
+                        </div>
+                    </div>
+                    <hr>
+                <% }); %>
+            </div>
+        </div>
+
+        <!-- Handled Leave Requests Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-check-circle me-1"></i> Handled Leave Requests
+            </div>
+            <div class="card-body">
+                <% leaveRequests.forEach(function(leaveReq) { %>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6>Leave Type:</h6>
+                            <p><%= leaveReq.LeaveType.leave_type %></p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Total Applied Leaves:</h6>
+                            <p><%= leaveReq.total_days %></p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <h6>Leave Duration:</h6>
+                            <p>From: <%= leaveReq.leave_from ? moment(leaveReq.leave_from).format('DD-MM-YYYY') : 'N/A' %> 
+                                To: <%= leaveReq.leave_to ? moment(leaveReq.leave_to).format('DD-MM-YYYY') : 'N/A' %>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <h6>Reason:</h6>
+                            <p><%= leaveReq.reason %></p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <h6>Status:</h6>
+                            <p>
+                                <% if(leaveReq.status == 'Pending') { %>
+                                    Pending
+                                    <br>
+                                    <button class="btn btn-success btn-sm" onclick="takeActionOnRequest(<%= leaveReq.id %>, 'Approve')">Approve</button>
+                                    <button class="btn btn-danger btn-sm" onclick="takeActionOnRequest(<%= leaveReq.id %>, 'Reject')">Reject</button>
+                                <% } else if(leaveReq.status == 'Approved') { %>
+                                    <span class="badge bg-success">Approved</span>
+                                    Action at: <%= moment(leaveReq.handled_at).format('DD-MM-YYYY') %>
+                                <% } else { %>
+                                    <span class="badge bg-danger">Rejected</span>
+                                <% } %>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <h6>Employee:</h6>
+                            <p><%= `${leaveReq.requestor.first_name} ${leaveReq.requestor.last_name}` %> (<%= leaveReq.requestor.role %>)</p>
+                        </div>
+                    </div>
+                    <hr>
+                <% }); %>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function takeActionOnRequest(reqId, status) {
+            $.ajax({
+                method: 'POST',
+                url: '/leaves/update-req-status',
+                data: { reqId: reqId, status: status },
+                success: function (response) {
+                    alert('Request status updated successfully!');
+                    location.reload();
+                },
+                error: function (xhr, status, error) {
+                    alert("Error occurred while updating the request status.");
+                }
+            });
+        }
+    </script>

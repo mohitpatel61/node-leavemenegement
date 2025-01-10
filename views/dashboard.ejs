@@ -1,0 +1,110 @@
+<%- contentFor("body") %>
+
+<div class="container-fluid px-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mt-4">
+        <h1>Dashboard</h1>
+        <div class="user-info text-end">
+            <h4 class="mb-1">Welcome, <strong><%= user.name %></strong></h4>
+            <p class="text-muted">Role: <strong><%= user.role %> <%= user.departmentName ? `(${user.departmentName})` : '' %></strong></p>
+
+        </div>
+    </div>
+    <hr class="mb-4" />
+
+    <!-- Role-Specific Sections -->
+    <% if (user.role === 'Admin') { %>
+        <div>
+            <h2>Admin Overview</h2>
+            <div class="row">
+                <!-- Managers Section -->
+                <div class="col-xl-3 col-md-6">
+                    <div class="card bg-primary text-white mb-4">
+                        <div class="card-body">Total Managers: 
+                            <span class="small text-white"><%= dashboardData.totalManagers %></span>
+                        </div>
+                        <div class="card-body">Managers Leave Requests: 
+                            <span class="small text-white"><%= dashboardData.totalManagerLeaveReqs %></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Employees Section -->
+                <div class="col-xl-3 col-md-6">
+                    <div class="card bg-primary text-white mb-4">
+                        <div class="card-body">Total Employees: 
+                            <span class="small text-white"><%= dashboardData.totalEmps %></span>
+                        </div>
+                        <div class="card-body">Employees Leave Requests: 
+                            <span class="small text-white"><%= dashboardData.totalEmpLeaveReqs %></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <% } %>
+
+    <% if (user.role === 'Manager') { %>
+        <div>
+            <h2>Manager Overview</h2>
+            <div class="row">
+                <div class="col-xl-3 col-md-6">
+                    <div class="card bg-primary text-white mb-4">
+                        <div class="card-body">Total Employees: 
+                            <span class="small text-white"><%= dashboardData.totalEmps %></span>
+                        </div>
+                        <div class="card-body">Employees Leave Requests: 
+                            <span class="small text-white"><%= dashboardData.totalEmpLeaveReqs %></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <% } %>
+
+   
+
+    <!-- Shared Statistics -->
+    <div>
+        <h2>Overall Statistics</h2>
+        <div class="row">
+            <div class="col-xl-3 col-md-6">
+                <div class="card bg-primary text-white mb-4">
+                    <div class="card-body">
+                        <h5>Total Leave Requests</h5>
+                        <p><%= dashboardData.totalHandlerLeaveReqs %></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card bg-warning text-white mb-4">
+                    <div class="card-body">
+                        <h5>Pending Requests</h5>
+                        <p><%= dashboardData.totalHandlerPendingLeaveReqs %></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card bg-success text-white mb-4">
+                    <div class="card-body">
+                        <h5>Approved Requests</h5>
+                        <p><%= dashboardData.totalHandlerApprovedLeaveReqs %></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card bg-danger text-white mb-4">
+                    <div class="card-body">
+                        <h5>Rejected Requests</h5>
+                        <p><%= dashboardData.totalHandlerRejectedLeaveReqs %></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Optional: Charts and Additional Stats -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
+    <script src="/assets/demo/chart-area-demo.js"></script>
+    <script src="/assets/demo/chart-bar-demo.js"></script>
+</div>

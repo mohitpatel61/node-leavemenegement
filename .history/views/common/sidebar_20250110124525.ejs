@@ -1,0 +1,45 @@
+<div id="layoutSidenav_nav">
+    <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+        <div class="sb-sidenav-menu">
+            <div class="nav">
+                <!-- <div class="sb-sidenav-menu-heading">Core</div> -->
+                <a class="nav-link" href="/dashboard">
+                    <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                    Dashboard
+                </a>
+                <% if (user.role === "Manager" || user.role === "Admin" || user.role === "Employee") { %>
+                    <a class="nav-link" href="/profile/user-profile">
+                        <div class="sb-nav-link-icon"><i class="fas fa-user-alt"></i></div>
+                        My Profile
+                    </a>
+                <% } %>
+                <% if (user.role === "Manager" || user.role === "Employee") { %>
+                    <a class="nav-link" href="/leaves/my-leaves">
+                        <div class="sb-nav-link-icon"><i class="fas fa-list-alt"></i></div>
+                        My leaves
+                    </a>
+                    <% } %>
+                <% if (user.role === "Admin") { %>
+                <a class="nav-link" href="/manager">
+                    <div class="sb-nav-link-icon"><i class="fas fa-user-alt"></i></div>
+                    Manager
+                </a>
+                <% } %>
+
+                <% if (user.role === "Manager") { %>
+                <a class="nav-link" href="/employee">
+                    <div class="sb-nav-link-icon"><i class="fas fa-user-alt"></i></div>
+                    Employees
+                </a>
+                <% } %>
+                <% if (user.role === "Manager" || user.role === "Admin" || user.role === "Employee") { %>
+                <a class="nav-link" href="/leaves/leave-reqs">
+                    <div class="sb-nav-link-icon"><i class="fas fa-list-alt"></i></div>
+                    Leave requests
+                </a>
+                <% } %>
+               
+            </div>
+        </div>
+    </nav>
+</div>

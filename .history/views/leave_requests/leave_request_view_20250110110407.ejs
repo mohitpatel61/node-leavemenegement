@@ -1,0 +1,161 @@
+<%- contentFor('body') %>
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Request Details</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item active">Request Details</li>
+    </ol>
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            Request Details
+        </div>
+        <div class="card-body">
+            <div id="layoutAuthentication">
+                <div id="layoutAuthentication_content">
+                    <main>
+                        <div class="container">
+                            <div class="row justify-content-center">
+                                <div class="col-lg-8">
+                                    <div class="card shadow-lg border-0 rounded-lg mt-5">
+                                        <div class="card-header bg-primary text-white">
+                                            <h3 class="text-center font-weight-light my-2">Leave Request Detail</h3>
+                                        </div>
+                                        <div class="card-body">
+                                            <!-- Request Information Section -->
+                                            <div class="mb-4">
+                                                <h5 class="text-primary">Request Information</h5>
+                                                <hr>
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <strong>Leave Type:</strong> 
+                                                        <div class="text-muted"><%= leaveReqDetails.LeaveType.leave_type %></div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <strong>Total Applied Leaves:</strong> 
+                                                        <div class="text-muted"><%= leaveReqDetails.total_days %></div>
+                                                    </div>
+                                                </div>
+                                                <div class="row mt-3">
+                                                    <div class="col-md-12">
+                                                        <strong>Leave Duration:</strong>
+                                                        <div class="text-muted">
+                                                            From <%= leaveReqDetails.leave_from ? moment(leaveReqDetails.leave_from).format('DD-MM-YYYY') : 'N/A' %> 
+                                                            To <%= leaveReqDetails.leave_to ? moment(leaveReqDetails.leave_to).format('DD-MM-YYYY') : 'N/A' %>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row mt-3">
+                                                    <div class="col-md-12">
+                                                        <strong>Reason:</strong>
+                                                        <div class="text-muted"><%= leaveReqDetails.reason %></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Status Section -->
+                                            <div class="mb-4">
+                                                <h5 class="text-primary">Current Status</h5>
+                                                <hr>
+                                                <div class="row">
+                                                    <div class="col-md-12">
+                                                        <% if (leaveReqDetails.status === 'Pending') { %>
+                                                            <span class="badge bg-warning text-dark">Pending</span>
+                                                        <% } else if (leaveReqDetails.status === 'Approved') { %>
+                                                            <span class="badge bg-success">Approved</span>
+                                                        <% } else { %>
+                                                            <span class="badge bg-danger">Rejected</span>
+                                                        <% } %>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <% if (currentUserData.role !== "Employee") { %>
+                                            <!-- Approver Action Section -->
+                                            <div class="mb-4">
+                                                <h5 class="text-primary">Approver Actions</h5>
+                                                <hr>
+                                                <% if (leaveReqDetails.status === 'Pending') { %>
+                                                    <textarea id="approverComment_<%= leaveReqDetails.id %>" 
+                                                              class="form-control" 
+                                                              placeholder="Enter your comment here" 
+                                                              rows="3"></textarea>
+                                                    <div class="mt-3">
+                                                        <button type="button" 
+                                                                class="btn btn-success me-2" 
+                                                                onclick="takeActionOnRequest(<%= leaveReqDetails.id %>, 'Approve')">Approve</button>
+                                                        <button type="button" 
+                                                                class="btn btn-danger" 
+                                                                onclick="takeActionOnRequest(<%= leaveReqDetails.id %>, 'Reject')">Reject</button>
+                                                    </div>
+                                                <% } else { %>
+                                                    <strong>Handled At:</strong>
+                                                    <div class="text-muted"><%= moment(leaveReqDetails.handled_at).format('DD-MM-YYYY') %></div>
+                                                    <strong>Approver's Comment:</strong>
+                                                    <div class="text-muted"><%= leaveReqDetails.approver_comment %></div>
+                                                <% } %>
+                                            </div>
+                                            <% } %>
+
+                                            <!-- Applicant Information -->
+                                            <div class="mb-4">
+                                                <h5 class="text-primary">Employee Information</h5>
+                                                <hr>
+                                                <div class="row">
+                                                    <div class="col-md-12">
+                                                        <strong>Employee Name:</strong> 
+                                                        <div class="text-muted">
+                                                            <%= `${leaveReqDetails.Applicant.first_name} ${leaveReqDetails.Applicant.last_name}` %> 
+                                                            (<%= leaveReqDetails.Applicant.role %>)
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <% if (leaveReqDetails.status !== 'Pending') { %>
+                                            <!-- Approver Information -->
+                                            <div class="mb-4">
+                                                <h5 class="text-primary">Approver Information</h5>
+                                                <hr>
+                                                <div class="row">
+                                                    <div class="col-md-12">
+                                                        <strong>Approver Name:</strong> 
+                                                        <div class="text-muted">
+                                                            <%= `${leaveReqDetails.Handler.first_name} ${leaveReqDetails.Handler.last_name}` %> 
+                                                            (<%= leaveReqDetails.Handler.role %>)
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <% } %>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function takeActionOnRequest(reqId, status) {
+        const comment = $('#approverComment_' + reqId).val();
+        $.ajax({
+            method: 'POST',
+            url: '/leaves/update-req-status',
+            data: { reqId: reqId, status: status, comment: comment },
+            success: function(response) {
+                alert('Request status updated successfully!');
+                setTimeout(function(){
+                    location.href = '/leave-reqs';
+                },2000);
+                
+            },
+            error: function(xhr, status, error) {
+                alert('An error occurred while updating the status.');
+            }
+        });
+    }
+</script>

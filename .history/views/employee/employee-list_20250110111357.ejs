@@ -1,0 +1,107 @@
+<%- contentFor('body') %>
+
+    <div class="container-fluid px-4">
+        <h1 class="mt-4">Employees</h1>
+        <ol class="breadcrumb mb-4">
+            <li class="breadcrumb-item active">Employees</li>
+        </ol>
+        <a class="btn btn-primary btn-block" href="/add-emp">Create employee</a>
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-table me-1"></i>
+                Employee list
+            </div>
+            <div class="card-body">
+                <table id="employees-table">
+                    <thead>
+                        <tr>
+                            <th>Created At</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Department</th>
+                            <th>Role</th>
+                            <th>Manager</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                    </tbody>
+                </table>
+
+                <script>
+                    // Initialize DataTable with default settings
+                    $(document).ready(function () {
+                        // Initialize DataTable with AJAX pagination
+                        $('#employees-table').DataTable({
+                            processing: false,   // Show processing indicator
+                            serverSide: true,   // Enable server-side processing
+                            ajax: {
+                                url: '/employee/emp-ajax',  // URL for the AJAX request
+                                type: 'POST',      // Method type
+                                data: function (d) {
+                                    // Pass additional parameters to the server (like search and sorting)
+                                    return {
+                                        draw: d.draw,
+                                        start: d.start,
+                                        length: d.length,
+                                        search: d.search?.value || '',
+                                        order: d.order
+                                    };
+                                }
+
+                            },
+                            columns: [
+                                { data: 'created_at' },
+                                { data: 'name' },
+                                { data: 'email' },
+                                { data: 'department' },
+                                { data: 'role' },
+                                { data: 'manager' },
+                                {
+                                    data: 'status',
+                                    render: function (data, type, row) {
+                                        return `<button class="btn btn-success">${data ? 'Active' : 'Pending'}</button>`;
+
+                                    }
+                                },
+                                {
+                                    data: 'id',
+                                    render: function (data, type, row) {
+                                        return `
+                        <a class="btn btn-sm btn-info" href="/employee/view-emp/${data}?type=view">View</a>
+                        <a class="btn btn-sm btn-edit" href="/employee/edit-emp/${data}?type=edit">Edit</a>
+                        <button class="btn btn-sm btn-danger delete-emp" data-id="${data}">Delete</button>`;
+                                    }
+                                }
+                            ]
+                        });
+                        // Handle Delete Button Click
+                        $(document).on('click', '.delete-emp', function () {
+                            const empId = $(this).data('id');  // Get employee ID from the button's data-id attribute
+
+                            if (confirm('Are you sure you want to mark this employee as deleted?')) {
+                                $.ajax({
+                                    url: `/employee/delete-emp/${empId}`,
+                                    method: 'PATCH',  // Use PATCH to update the employee record
+                                    success: function (response) {
+                                        if (response.success) {
+                                            alert('Employee marked as deleted successfully');
+                                            $('#employees-table').DataTable().ajax.reload();  // Reload the DataTable to reflect the change
+                                        } else {
+                                            alert('Failed to mark the employee as deleted');
+                                        }
+                                    },
+                                    error: function () {
+                                        alert('An error occurred while marking the employee as deleted');
+                                    }
+                                });
+                            }
+                        });
+                    });
+
+                </script>
+            </div>
+        </div>
+    </div>

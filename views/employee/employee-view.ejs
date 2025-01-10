@@ -1,0 +1,185 @@
+<%- contentFor('body') %>
+    <div class="container-fluid px-4">
+        <h1 class="mt-4">Employee Details</h1>
+        <ol class="breadcrumb mb-4">
+            <li class="breadcrumb-item active">Employee Details</li>
+        </ol>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-table me-1"></i>
+                Employee Details
+            </div>
+            <div class="card-body">
+                <div id="layoutAuthentication">
+                    <div id="layoutAuthentication_content">
+                        <main>
+                            <div class="container">
+                                <div class="row justify-content-center">
+                                    <div class="col-lg-8">
+                                        <!-- Employee Details Section -->
+                                        <div class="card shadow-lg border-0 rounded-lg mb-4">
+                                            <div class="card-header text-center">
+                                                <h3 class="font-weight-light my-4">Employee Details</h3>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="row mb-3">
+                                                    <div class="col-md-6">
+                                                        <div class="form-floating mb-3">
+                                                            <strong>Name:</strong> <%= `${empDetail.first_name} ${empDetail.last_name}` %>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-floating mb-3">
+                                                            <strong>Email:</strong> <%= empDetail.email %>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="form-floating mb-3">
+                                                    <strong>Department:</strong> <%= empDetail.department.department_name %>
+                                                </div>
+                                                <div class="form-floating mb-3">
+                                                    <strong>Manager:</strong> <%= `${empDetail.created_by_user.first_name} ${empDetail.created_by_user.last_name}` %>
+                                                </div>
+                                                <div class="form-floating mb-3">
+                                                    <strong>Role:</strong> <%= `${empDetail.role}` %>
+                                                </div>
+                                                <div class="form-floating mb-3">
+                                                    <strong>Pin code:</strong> <%= `${empDetail.pin_code}` %>
+                                                </div>
+                                                <div class="form-floating mb-3">
+                                                    <strong>Address:</strong> <%= `${empDetail.address}` %>
+                                                </div>
+                                              
+                                            </div>
+                                        </div>
+
+                                        <!-- Employee Leaves Section -->
+                                        <div class="card shadow-lg border-0 rounded-lg mb-4">
+                                            <div class="card-header text-center">
+                                                <h3 class="font-weight-light my-4">Employee Leaves</h3>
+                                            </div>
+                                            <span id="errorWhenApply" class="text-center mt-4 d-none" style="color: red;"></span>
+                                            <span id="successApply" class="text-center mt-4 d-none" style="color: green;"></span>
+                                            <div class="card-body">
+                                                <% empLeaveData.forEach(function(empLeave) { %>
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-6">
+                                                            <div class="form-floating mb-3">
+                                                                <strong>Leave Type:</strong> <%= empLeave.leave.leave_type %>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mb-3 approve-div-<%= empLeave.id %> d-none">
+                                                        <div class="col-md-6">
+                                                            <label for="from_date_<%= empLeave.id %>">From date:</label>
+                                                            <input type="date" name="from_date" id="from_date_<%= empLeave.id %>" class="form-control">
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label for="to_date_<%= empLeave.id %>">To date:</label>
+                                                            <input type="date" name="to_date" id="to_date_<%= empLeave.id %>" class="form-control">
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <input type="text" name="total_days" id="total_days_<%= empLeave.id %>" class="form-control" readonly>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <textarea type="text" name="reason" id="reason_<%= empLeave.id %>" class="form-control" placeholder="Reason for leave"></textarea>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <span id="error_<%= empLeave.id %>" class="error d-none" style="color: red;"></span>
+                                                        </div>
+                                                        <div class="form-floating mb-3">
+                                                            <a href="javascript:void(0)" class="btn btn-secondary applyLeave btn btn-default">Apply</a>
+                                                            <a href="javascript:void(0)" class="btn btn-danger cancel-leave">Cancel</a>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-3">
+                                                            <div class="form-floating mb-3">
+                                                                <strong>Total Allocated:</strong> <%= empLeave.assigned_leaves %>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <div class="form-floating mb-3">
+                                                                <strong>Total Used:</strong> <%= empLeave.used_leaves %>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <div class="form-floating mb-3">
+                                                                <strong>Balance:</strong> <%= empLeave.assigned_leaves - empLeave.used_leaves %>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <hr>
+                                                <% }); %>
+                                            </div>
+                                        </div>
+
+                                        <!-- Leave Requests Section -->
+                                        <div class="card shadow-lg border-0 rounded-lg mb-4">
+                                            <div class="card-header text-center">
+                                                <h3 class="font-weight-light my-4">Leave Requests</h3>
+                                            </div>
+                                            <div class="card-body">
+                                                <% leaveRequests.forEach(function(leaveReq) { %>
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-6">
+                                                            <div class="form-floating mb-3">
+                                                                <strong>Leave Type:</strong> <%= leaveReq.LeaveType.leave_type %>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="form-floating mb-3">
+                                                                <strong>Total Applied Leaves:</strong> <%= leaveReq.total_days %>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-12">
+                                                            <div class="form-floating mb-3">
+                                                                <strong>Leave Duration:</strong> From <%= leaveReq.leave_from ? moment(leaveReq.leave_from).format('DD-MM-YYYY') : 'N/A' %> 
+                                                                To <%= leaveReq.leave_to ? moment(leaveReq.leave_to).format('DD-MM-YYYY') : 'N/A' %>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-12">
+                                                            <div class="form-floating mb-3">
+                                                                <strong>Reason:</strong> <%= leaveReq.reason %>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-12">
+                                                            <div class="form-floating mb-3">
+                                                                <strong>Status:</strong>
+                                                                <% if(leaveReq.status == 'Pending') { %>
+                                                                    <span class="badge bg-warning text-dark">Pending</span>
+                                                                <% } else if(leaveReq.status == 'Approved') { %>
+                                                                    <span class="badge bg-success">Approved</span>
+                                                                <% } else { %>
+                                                                    <span class="badge bg-danger">Rejected</span>
+                                                                <% } %>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-12">
+                                                            <div class="form-floating mb-3">
+                                                                <strong>Approver:</strong> <%= `${leaveReq.approver.first_name} ${leaveReq.approver.last_name}` %> (<%= leaveReq.approver.role %>)
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <hr>
+                                                <% }); %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>

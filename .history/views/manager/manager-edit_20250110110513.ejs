@@ -1,0 +1,98 @@
+<%- contentFor('body') %>
+
+    <div class="container-fluid px-4">
+        <h1 class="mt-4">Edit manager</h1>
+        <ol class="breadcrumb mb-4">
+            <li class="breadcrumb-item active">Edit manager</li>
+        </ol>
+     
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-table me-1"></i>
+                Edit manager
+            </div>
+            <div class="card-body">
+                <div id="layoutAuthentication">
+                    <div id="layoutAuthentication_content">
+                        <main>
+                            <div class="container">
+                                <div class="row justify-content-center">
+                                    <div class="col-lg-7">
+                                        <div class="card shadow-lg border-0 rounded-lg mt-5">
+                                            <div class="card-header"><h3 class="text-center font-weight-light my-4">Edit manager</h3></div>
+                                            <div class="card-body">
+                                                <% if (success || error || (errorMessages && errorMessages.length > 0)) { %>
+                                                    <div>
+                                                        <% if (success) { %>
+                                                        <div class="alert alert-success <% if (success.length == 0) { %> d-none <% } %>"><%= success %></div>
+                                                      <% } %>
+                                                      <% if (error) { %>
+                                                        <div class="alert alert-danger <% if (error.length == 0) { %> d-none <% } %>"  ><%= error %></div>
+                                                      <% } %>
+                                                      <% if (errorMessages && errorMessages.length > 0) { %>
+                                                        <div class="alert alert-danger">
+                                                          <ul>
+                                                            <% errorMessages.forEach(function(msg) { %>
+                                                              <li><%= msg %></li>
+                                                            <% }); %>
+                                                          </ul>
+                                                        </div>
+                                                      <% } %>
+                                                    </div>
+                                                  <% } %>
+                                                  
+                                                <form  action="/manager/edit-manager" method="post" accept-charset="utf-8">
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-6">
+                                                            <div class="form-floating mb-3 mb-md-0">
+                                                                <input class="form-control" value="<%= managerDetails ? managerDetails.first_name : ''  %>" name="firstName" id="firstName" type="text" placeholder="Enter your first name" />
+                                                                <label for="firstName">First name</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="form-floating">
+                                                                <input class="form-control" value="<%= managerDetails ? managerDetails.last_name : ''  %>" name="lastName" id="lastName" type="text" placeholder="Enter your last name" />
+                                                                <label for="lastName">Last name</label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-floating mb-3">
+                                                        <input class="form-control" name="email" value="<%= managerDetails ? managerDetails.email : ''  %>" id="email" type="email" placeholder="name@example.com" />
+                                                        <label for="email">Email address</label>
+                                                    </div>
+                                                   
+                                                    <!-- <div class="row mb-3">
+                                                        <div class="col-md-12">
+                                                            <div class="form-floating mb-3 mb-md-0">
+                                                                <select class="form-control" name="department" id="department">
+                                                                    <option value="">Select</option>
+                                                                    <% departments.forEach(function(dept)  {
+                                                                        %>
+                                                                         <option value="<%= dept.id %>" <%= managerDetails && managerDetails.department.id == dept.id ? 'selected' : '' %> > <%= dept.department_name %></option>
+                                                                        <%
+                                                                        });
+                                                                    %>
+                                                                </select>
+                                                                <label for="department">Department</label>
+                                                            </div>
+                                                        </div>
+                                                    </div> -->
+                                                    <div class="mt-4 mb-0">
+                                                        <input type="hidden" name="managerId" id="managerId" value="<%= managerDetails.id %>" >
+                                                        <div class="d-grid"><button type="submit" class="btn btn-primary btn-block" >Update</button></div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                            
+                                        </div>
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>

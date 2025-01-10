@@ -1,0 +1,110 @@
+Node Js sample app
+
+Title : Organization Leave management system
+
+Modules 
+1) Users (Crud) 
+2) Departments (Crud)
+3) Leaves master (Crud)
+3) Roles (Predefined)
+
+Process:
+Employess base leave request management approval process.
+
+===============================  Project work day by day ===============================
+
+02.12.2024
+1)set up node js app
+2)Install Node js express skeleton
+3)install package for ejs and set view engine for APP
+
+install nodemon
+make routes for dashboard and users list page with EJS view files
+
+
+===================== Steps ======================
+1) Theme integration
+    Header/footer
+    Main page
+    Login page
+    list of users (Crud)
+    List of departments (Crud)
+
+ 2) Manage migrations
+ 	1) Users
+ 	2) Departments
+ 	3) Roles (Predefined and get from CONSTANTS )
+ 	4) Leaves
+
+ 3) Login flow
+ 	Admin login and access all links
+
+
+
+database Name : leaveManagementApp 
+Schema
+Table name: employees
+    Columns:
+    1) id
+    2) first_name
+    3) last_name
+    4) username
+    5) emp_code
+    6) email
+    7) password
+    8) address
+    9) pincode
+    10) role
+    11) department
+    12) status 
+    13) created_at
+    14) created_by
+    15) updated_at
+    16) updated_by
+
+Table name: departments
+    Columns:
+    1) id
+    2) department_name
+    3) status
+    4) created_at
+    5) created_by
+    6) updated_at
+    7) updated_by
+
+
+Table name: leaves
+    Columns:
+    1) id
+    2) leave_type
+    3) no_of_leaves
+    4) status
+    5) created_at
+    6) created_by
+    7) updated_at
+    8) updated_by
+
+Table name: Employee leaves
+  Columns:
+    1) id
+    2) employee_id
+    3) leave_id
+
+Table Name: leave_application
+   Columns:
+    1) id
+    2) emp_id
+    3) leave_type
+    4) leave_from
+    5) leave_to
+    6) total_days
+    7) reason
+    8) approver_id
+    9) status 
+    10) created_at
+    11) created_by
+    12) handled_at
+    13) handled_by
+    14) approver_comment
+
+

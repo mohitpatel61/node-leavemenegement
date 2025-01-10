@@ -1,0 +1,291 @@
+<%- contentFor('body') %>
+    <div class="container-fluid px-4">
+        <h1 class="mt-4">Profile Details</h1>
+        <ol class="breadcrumb mb-4">
+            <li class="breadcrumb-item active">Profile Details</li>
+        </ol>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-table me-1"></i> Profile Details
+            </div>
+            <div class="card-body">
+                <div id="layoutAuthentication">
+                    <div id="layoutAuthentication_content">
+                        <main>
+                            <div class="container">
+                                <div class="row justify-content-center">
+                                    <!-- Profile Picture Section -->
+                                    <div class="col-md-4 text-center">
+                                        <div class="mb-4 position-relative">
+                                            <!-- Display the current profile image or the default image -->
+                                            <img id="profilePic"
+                                                src="<%= empDetail && empDetail.thumbnail_image ? empDetail.thumbnail_image : '/assets/img/no-image.png' %>"
+                                                alt="Profile Picture" class="img-thumbnail rounded-circle"
+                                                style="width: 150px; height: 150px; object-fit: cover;">
+
+                                            <!-- Pencil icon for editing profile picture, positioned over the image -->
+                                            <label for="profileImage" class="position-absolute"
+                                                style="bottom: -15px; right: 190px; cursor: pointer; z-index: 999;">
+                                                <i class="fa fa-pencil"
+                                                    style="font-size: 24px; color: #fff; background-color: rgba(0, 0, 0, 0.6); border-radius: 50%; padding: 5px;"></i>
+                                            </label>
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="file" class="form-control" id="profileImage"
+                                                name="profileImage" accept="image/*" style="display: none;">
+                                        </div>
+                                    </div>
+
+
+
+                                    <div class="col-md-8">
+                                        <div class="card shadow-lg border-0 rounded-lg mt-5">
+                                            <div class="card-header">
+                                                <h3 class="text-center font-weight-light my-4">Profile Details</h3>
+                                            </div>
+                                            <div class="card-body">
+                                                <% if (success || error || (errorMessages && errorMessages.length> 0)) {
+                                                    %>
+                                                    <div>
+                                                        <% if (success) { %>
+                                                            <div
+                                                                class="alert alert-success <% if (success.length == 0) { %> d-none <% } %>">
+                                                                <%= success %>
+                                                            </div>
+                                                            <% } %>
+                                                                <% if (error) { %>
+                                                                    <div
+                                                                        class="alert alert-danger <% if (error.length == 0) { %> d-none <% } %>">
+                                                                        <%= error %>
+                                                                    </div>
+                                                                    <% } %>
+                                                                        <% if (errorMessages && errorMessages.length> 0)
+                                                                            { %>
+                                                                            <div class="alert alert-danger">
+                                                                                <ul>
+                                                                                    <% errorMessages.forEach(function(msg)
+                                                                                        { %>
+                                                                                        <li>
+                                                                                            <%= msg %>
+                                                                                        </li>
+                                                                                        <% }); %>
+                                                                                </ul>
+                                                                            </div>
+                                                                            <% } %>
+                                                    </div>
+                                                    <% } %>
+
+                                                        <form action="/profile/edit-profile" method="post"
+                                                            accept-charset="utf-8">
+                                                            <!-- Profile Fields -->
+                                                            <div class="row mb-3">
+                                                                <div class="col-md-6">
+                                                                    <div class="form-floating mb-3">
+                                                                        <input class="form-control"
+                                                                            value="<%= empDetail ? empDetail.first_name : '' %>"
+                                                                            name="firstName" id="firstName" type="text"
+                                                                            placeholder="Enter your first name" />
+                                                                        <label for="firstName">First Name</label>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <div class="form-floating">
+                                                                        <input class="form-control"
+                                                                            value="<%= empDetail ? empDetail.last_name : '' %>"
+                                                                            name="lastName" id="lastName" type="text"
+                                                                            placeholder="Enter your last name" />
+                                                                        <label for="lastName">Last Name</label>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="row mb-3">
+                                                                <div class="col-md-6">
+                                                                    <div class="form-floating mb-3">
+                                                                        <input class="form-control" readonly
+                                                                            name="email"
+                                                                            value="<%= empDetail ? empDetail.email : '' %>"
+                                                                            id="email" type="email"
+                                                                            placeholder="name@example.com" />
+                                                                        <label for="email">Email Address</label>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <div class="form-floating mb-3">
+                                                                        <select class="form-control" name="department"
+                                                                            id="department" disabled>
+                                                                            <option value="">Select</option>
+                                                                            <% departments.forEach(function(dept) { %>
+                                                                                <option value="<%= dept.id %>"
+                                                                                    <%=empDetail &&
+                                                                                    empDetail.department_id==dept.id
+                                                                                    ? 'selected' : '' %>>
+                                                                                    <%= dept.department_name %>
+                                                                                </option>
+                                                                                <% }); %>
+                                                                        </select>
+                                                                        <label for="department">Department</label>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="row mb-3">
+                                                                <div class="col-md-6">
+                                                                    <div class="form-floating mb-3">
+                                                                        <input class="form-control"
+                                                                            value="<%= empDetail ? empDetail.pin_code : '' %>"
+                                                                            name="pinCode" id="pinCode" type="number"
+                                                                            placeholder="12345" />
+                                                                        <label for="pinCode">Pin Code</label>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <div class="form-floating mb-3">
+                                                                        <input class="form-control" disabled
+                                                                            value="<%= empDetail ? empDetail.role : '' %>"
+                                                                            name="role" id="role" type="text"
+                                                                            placeholder="Role" />
+                                                                        <label for="role">Role</label>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="row mb-3">
+                                                                <div class="col-md-12">
+                                                                    <div class="form-floating mb-3">
+                                                                        <textarea class="form-control" name="address"
+                                                                            id="address"><%= empDetail.address %></textarea>
+                                                                        <label for="address">Address</label>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="mt-4 mb-0">
+                                                                <div class="d-grid">
+                                                                    <button type="submit"
+                                                                        class="btn btn-primary btn-block">
+                                                                        Update Profile
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </form>
+                                            </div>
+                                        </div>
+
+                                        <!-- Leave Requests Section -->
+                                        <div class="card shadow-lg border-0 rounded-lg mt-5">
+                                            <div class="card-header">
+                                                <h3 class="text-center font-weight-light my-4">Leave Requests</h3>
+                                            </div>
+                                            <div class="card-body">
+                                                <% leaveRequests.forEach(function(leaveReq) { %>
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-6">
+                                                            <div class="form-floating mb-3">
+                                                                Leave Type: <%= leaveReq.LeaveType.leave_type %>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="form-floating mb-3">
+                                                                Total Applied Leaves: <%= leaveReq.total_days %>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-12">
+                                                            <div class="form-floating mb-3">
+                                                                Leave Duration: From <%= leaveReq.leave_from ?
+                                                                    moment(leaveReq.leave_from).format('DD-MM-YYYY')
+                                                                    : 'N/A' %>
+                                                                    To <%= leaveReq.leave_to ?
+                                                                        moment(leaveReq.leave_to).format('DD-MM-YYYY')
+                                                                        : 'N/A' %>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-12">
+                                                            <div class="form-floating mb-3">
+                                                                Reason: <%= leaveReq.reason %>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-12">
+                                                            <div class="form-floating mb-3">
+                                                                Status:
+                                                                <% if (leaveReq.status=='Pending' ) { %>
+                                                                    <button type="button"
+                                                                        class="btn btn-warning">Pending</button>
+                                                                    <% } else if (leaveReq.status=='Approved' ) { %>
+                                                                        <button type="button"
+                                                                            class="btn btn-success">Approved</button>
+                                                                        <% } else { %>
+                                                                            <button type="button"
+                                                                                class="btn btn-danger">Rejected</button>
+                                                                            <% } %>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-12">
+                                                            <div class="form-floating mb-3">
+                                                                Approver: <%= `${leaveReq.approver.first_name}
+                                                                    ${leaveReq.approver.last_name}` %> (<%=
+                                                                        leaveReq.approver.role %>)
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <hr>
+                                                    <% }); %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            // Handle file input change
+            $('#profileImage').on('change', function (e) {
+                // Get the selected file
+                var formData = new FormData();
+                var file = e.target.files[0];
+
+                if (file) {
+                    formData.append('profileImage', file);
+
+                    // Send the file via AJAX
+                    $.ajax({
+                        url: '/profile/upload-profile-picture', // Your server-side endpoint
+                        method: 'POST',
+                        data: formData,
+                        contentType: false,
+                        processData: false,
+                        success: function (response) {
+                            if (response.status === 'success') {
+                                // Update the profile image on success
+                                $('#profilePic').attr('src', response.thumbnailImage);
+                                // alert('Profile picture updated successfully!');
+                            } else {
+                                alert('Error uploading image: ' + response.message);
+                            }
+                        },
+                        error: function (error) {
+                            console.log("======error", error.message);
+                            // alert('Error uploading image');
+                            console.error(error);
+                        }
+                    });
+                }
+            });
+        });
+
+    </script>
