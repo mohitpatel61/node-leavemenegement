@@ -5,7 +5,15 @@ module.exports = {
   //Controller function to list all the services
   getDashboardView: async (req, res) => {
     try {
-  
+      
+      const user = req.user; // Get user from session
+    
+      if (!user) {
+        req.flash("error", "Please log in first.");
+        return res.redirect("/user/login");
+      }
+
+
      // Access decoded user data
      const userId = req.user.id;
      const userRole = req.user.role;
@@ -123,7 +131,7 @@ module.exports = {
      
       res.render("dashboard", resData);
     } catch (error) {
-      res.redirect("/login");
+      res.redirect("/user/login");
     }
   },
 }

@@ -69,13 +69,24 @@ module.exports = {
         return res.redirect("/user/login"); // Redirect back to form if email exists
       }
 
-      const token = jwt.sign({ id: userInfo.id, departmentName: userInfo?.department?.department_name, role: userInfo.role, name: `${userInfo.first_name} ${userInfo.last_name}`, email: userInfo.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
-      res.cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production", // use HTTPS in production
-        maxAge: 3600000, // 1 hour
-      });
+      // const token = jwt.sign({ id: userInfo.id, departmentName: userInfo?.department?.department_name, role: userInfo.role, name: `${userInfo.first_name} ${userInfo.last_name}`, email: userInfo.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      // res.cookie("token", token, {
+      //   httpOnly: true,
+      //   secure: process.env.NODE_ENV === "production", // use HTTPS in production
+      //   maxAge: 3600000, // 1 hour
+      // });
+
+      // Store user data in session instead of creating JWT
+      req.session.user = {
+        id: userInfo.id,
+        departmentName: userInfo?.department?.department_name,
+        role: userInfo.role,
+        name: `${userInfo.first_name} ${userInfo.last_name}`,
+        email: userInfo.email
+      };
+
       req.flash("success", "Login successfully!");
+      
       return res.redirect("/dashboard"); // Redirect back to the form after success
 
     } catch (error) {
@@ -87,18 +98,26 @@ module.exports = {
 
   logout: async (req, res) => {
     try {
-      // Clear authentication cookie
-      res.clearCookie('token');
+      // Set flash message before destroying the session
       req.flash("success", "Log out successfully .....");
-      return res.redirect('/login');
-      // Destroy session if used
-     
+  
+      // Destroy the session
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("Logout session error:", err);
+          req.flash("error", "Failed to log out. Please try again.");
+          return res.redirect('/profile');
+        }
+  
+        // Redirect after session destruction
+        return res.redirect('/user/login');
+      });
     } catch (error) {
       console.error("Logout error:", error);
       req.flash("error", "Failed to Log out. Please try again.");
       return res.redirect('/profile');
     }
-  }
+  }  
   
 
 };

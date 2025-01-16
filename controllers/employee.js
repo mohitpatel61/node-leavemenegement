@@ -100,10 +100,7 @@ module.exports = {
   // Controller function to render the Employee List view
   getEmployeeListView: async (req, res) => {
     try {
-      const token = req.cookies.token;
-      if (!token) {
-        return res.status(403).json({ error: "No token provided" });
-      }
+     
       
       res.render('employee/employee-list', {
         title: 'Employees',

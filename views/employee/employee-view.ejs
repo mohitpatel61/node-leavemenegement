@@ -45,10 +45,10 @@
                                                     <strong>Role:</strong> <%= `${empDetail.role}` %>
                                                 </div>
                                                 <div class="form-floating mb-3">
-                                                    <strong>Pin code:</strong> <%= `${empDetail.pin_code}` %>
+                                                    <strong>Pin code:</strong> <%= empDetail.pin_code !== null ? `${empDetail.pin_code}` : '' %>
                                                 </div>
                                                 <div class="form-floating mb-3">
-                                                    <strong>Address:</strong> <%= `${empDetail.address}` %>
+                                                    <strong>Address:</strong> <%= empDetail.address !== null ?  `${empDetail.address}` : '' %>
                                                 </div>
                                               
                                             </div>

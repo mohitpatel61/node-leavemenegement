@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="/css/dataTables.bootstrap5.min.css">
 
     <script src="/js/jquery.min.js"></script>
+
     <!-- <script src="/js/datatable.min.js" crossorigin="anonymous"></script> -->
     <script src="/js/jquery.dataTables.min.js"></script>
     <script src="/js/bootstrap.bundle.min.js"></script>
@@ -58,5 +59,17 @@
   
     <!-- <script src="/js/datatable.min.js" crossorigin="anonymous"></script> -->
     <!-- <script src="/js/datatables-simple-demo.js"></script> -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/socketcluster-client/socketcluster-client.min.js"></script> -->
+    <script src="/js/socketcluster-client.min.js"></script>
+
+    <script>
+        let socket = socketClusterClient.create({
+            hostname: 'localhost', // Replace with your server hostname
+            port: 2000, // Replace with your server port
+        });
+        console.log("Socket:", socket);
+    </script>
 </body>
+
+  
 </html>

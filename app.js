@@ -1,5 +1,6 @@
+require('dotenv').config();
 const express = require('express');
-const expressLayouts = require('express-ejs-layouts'); // middlewear for handle layouts
+const expressLayouts = require('express-ejs-layouts'); // Middleware for handling layouts
 const indexRouter = require("./routes/index");
 const flash = require("connect-flash");
 const session = require("express-session");
@@ -9,72 +10,87 @@ const cookieParser = require('cookie-parser');
 const authorize = require('./middlewares/authorize');
 const jwt = require('jsonwebtoken');
 const path = require('path');
-
-
-require('dotenv').config();
+const http = require('http');
+const eetase = require('eetase');
+const socketClusterServer = require('socketcluster-server');
 
 const App = express();
+const server = http.createServer(App); // Use the same server instance for HTTP and WebSocket
 
+let options = {
+  // Add your socketClusterServer options here, if any.
+};
+
+// Middleware Setup
 App.use(express.json());
 App.use(bodyParser.json());
 App.use(cookieParser());
 App.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Serving static files from the 'uploads' folder
 
 App.use(
-    session({
-      secret: "LEAVEMGMTDEMO",
-      resave: false,
-      saveUninitialized: true,
-    })
-  );
+  session({
+    secret: 'LEAVEMGMTDEMO',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false } // Set to true in production if using https
+  })
+);
+
 App.use(flash());
 
 App.use((req, res, next) => {
-    res.locals.success = req.flash("success");
-    res.locals.error = req.flash("error");
-    try {
-      const token = req.cookies.token;
-      if (token) {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        res.locals.user = decoded; // Pass user data to all views
-      } else {
-        res.locals.user = null; // No user data if no token
-      }
-    } catch (error) {
-      console.error("Error decoding token:", error.message);
-      res.locals.user = null; // Clear user data on token error
-    }
-    next();
-  });
-// Parse URL-encoded request bodies
-App.use(express.urlencoded({ extended: true }));
-App.use(express.static('public'));
-
-// App layout and views sets
-App.set('view engine', 'ejs'); // Set view engine for load HTML pages
-App.use(expressLayouts); // use layout package for layout handle
-
-
+  res.locals.success = req.flash("success");
+  res.locals.error = req.flash("error");
+  next();
+});
 
 App.use((req, res, next) => {
-  if (req.path.startsWith('/user/login')) {
-      res.locals.layout = 'loginLayout';
-  } else {
-      res.locals.layout = 'layout'; // Default layout
+  try {
+    const user = req.session.user;
+    res.locals.user = user || null;
+  } catch (error) {
+    console.error("Error decoding token:", error.message);
+    res.locals.user = null; // Clear user data on token error
   }
   next();
 });
 
-// App.set('layout','layout'); // Set default layout file
+// Parse URL-encoded request bodies
+App.use(express.urlencoded({ extended: true }));
+App.use(express.static('public'));
 
-App.set('views', './views'); // Set folder for get view pages
+// Set up EJS and Layouts
+App.set('view engine', 'ejs');
+App.use(expressLayouts);
 
-App.use("/", indexRouter);
-
+// Layout logic for specific paths
 App.use((req, res, next) => {
-  res.status(404).render('404', { title: 'Page Not Found' , layout: 'loginLayout'});
+  res.locals.layout = req.path.startsWith('/user/login') ? 'loginLayout' : 'layout';
+  next();
 });
+
+App.set('views', './views'); // Set folder for views
+
+// Routes Setup
+App.use("/", indexRouter);
+App.use((req, res) => {
+  res.status(404).render('404', { title: 'Page Not Found', layout: 'loginLayout' });
+});
+
 App.use(authorize);
 
+// Use eetase with the same server
+const httpServer = eetase(server); // Correctly wrap the server for WebSocket
+const agServer = socketClusterServer.attach(httpServer, options); // Attach SocketCluster to the same server
 
-App.listen("2000");
+(async () => {
+  for await (let { socket } of agServer.listener('connection')) {
+    console.log("New connection established. AuthState:", socket.id);
+  }
+})();
+
+// Start the server
+const PORT = process.env.PORT || 2000;
+httpServer.listen(PORT, () => {
+  console.log(`Server running with WebSocket on http://localhost:${PORT}`);
+});

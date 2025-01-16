@@ -1,5 +1,5 @@
 const moment = require("moment");
-const {LeaveApplication, Manager, User, EmployeeLeave,LeaveMaster,Department, sequelize, Sequelize} = require("../models");
+const {LeaveApplication, Manager, User, EmployeeLeave,LeaveMaster,Department, Notification, sequelize, Sequelize} = require("../models");
 const { logMessage } = require("../services/logger");
 
 module.exports = {
@@ -204,55 +204,72 @@ module.exports = {
         
     },
 
-    sendLeaveRequest: async(req,resp) => {
-        
-        // resp.json(req.body);
-        
-        const handlerData =  await User.findOne({
-            where: { id: req.body.empId }
-        });
-        
-        // resp.json(handlerData);
-        const {leaveId, empId, reason, from_date, to_date, total_days} = req.body;
+    sendLeaveRequest: async (req, resp) => {
+      // Get handler data (user details)
+      const handlerData = await User.findOne({
+          where: { id: req.body.empId }
+      });
+  
+      // Check if handlerData is found
+      if (!handlerData) {
+          return resp.status(404).json({ message: 'Handler data not found', status: false });
+      }
+  
+      // Check if created_by exists in handlerData
+      if (!handlerData.created_by) {
+          return resp.status(400).json({ message: 'Handler data does not have created_by field', status: false });
+      }
+  
+      const { leaveId, empId, reason, from_date, to_date, total_days } = req.body;
+  
+      // Get employee leave data
+      const employeeleveData = await EmployeeLeave.findOne({
+          where: { id: leaveId, user_id: empId },
+          include: [
+              {
+                  model: LeaveMaster,
+                  as: 'leave',
+                  attributes: ['id', 'leave_type', 'no_of_leaves']
+              }
+          ]
+      });
+      
+      // Calculate used leaves
+      const usedLeaves = Number(employeeleveData.used_leaves) + Number(total_days);
+      if (usedLeaves <= employeeleveData.assigned_leaves) {
+          const leaveReq = await LeaveApplication.create({
+              user_id: empId,
+              leave_type: employeeleveData.leave.id,
+              leave_from: from_date,
+              leave_to: to_date,
+              reason: reason,
+              total_days: total_days,
+              handled_by: handlerData.created_by,
+              created_at: sequelize.fn('NOW'),
+              created_by: empId
+          }).then(async function (res) {
+              // Update used leaves in employee leave data
+              employeeleveData.used_leaves = usedLeaves;
+              await employeeleveData.save();
+  
+              // Create notification
+              const notification = await Notification.create({
+                  user_id: handlerData.created_by, // The user who is being notified
+                  leave_type: employeeleveData.leave.id,
+                  leave_req_id: res.id,  // Leave request ID
+                  message: `New leave request ${employeeleveData.leave.leave_type} from employee ID: ${empId} for ${total_days} days.`,
+                  is_read: false,
+                  created_at: sequelize.fn('NOW'),
+              });
 
-        const employeeleveData =  await EmployeeLeave.findOne({
-           where: {id: leaveId, user_id:empId },
-           include: [
-                {
-                model: LeaveMaster,
-                as: 'leave',
-                attributes: ['id','leave_type','no_of_leaves']
-                }
-            ]
-        });
-
-        const usedLeaves = Number(employeeleveData.used_leaves) + Number(total_days);
-        if(usedLeaves <= employeeleveData.assigned_leaves)
-        {
-        const leaveReq = await LeaveApplication.create({
-            user_id: empId,
-            leave_type: employeeleveData.leave.id,
-            leave_from: from_date,
-            leave_to: to_date,
-            reason: reason,
-            total_days: total_days,
-            handled_by: handlerData.created_by,
-            created_at :  sequelize.fn('NOW'),
-            created_by : empId
-        }).then(async function(res){
-            
-            console.log("usedLeaves================",usedLeaves);
-            employeeleveData.used_leaves = usedLeaves;
-            await employeeleveData.save();
-        });
-        // req.flash("success", "Leave applied successfully!");
-        resp.json({message: 'Leave applied successfully', status : true})
-        
-    }   
-    else{
-        resp.json({message: 'You have No leave balance', status : false})
-    }
-    },
+              const userSocketId = handlerData.created_by.toString();
+          });
+  
+          resp.json({ message: 'Leave applied successfully', status: true });
+      } else {
+          resp.json({ message: 'You have no leave balance', status: false });
+      }
+  },  
 
     getEmpLeavesView: async(req, res) => {
       try {
