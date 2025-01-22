@@ -283,7 +283,87 @@ module.exports = {
       req.flash("error", "Failed to Update profile. Please try again.");
       return res.redirect('/profile/user-profile');
     }
-  }
+  },
+
+  getNotification: async (req, res) => {
+    try {
+
+      //  console.log(req.user.id);return false;
+      const empDetail = await User.findOne({
+        where: { id: req.user.id },
+        include: [
+          {
+            model: Department,
+            as: 'department',
+            attributes: ['id', 'department_name'],
+          },
+          {
+            model: User,
+            as: 'employee',
+            attributes: ['id', 'first_name', 'last_name'],
+          },
+          {
+            model: User,
+            as: 'created_by_user',
+            attributes: ['id', 'first_name', 'last_name'],
+          }
+        ],
+        attributes: ['id', 'first_name', 'last_name', 'email', 'role', 'status','pin_code','address', 'profile_image', 'thumbnail_image']
+      });
+
+
+      // get employee leaves
+      const empLeaveData = await EmployeeLeave.findAll({
+        where: { user_id: req.user.id },
+        include: [
+          {
+            model: LeaveMaster,
+            as: 'leave',
+            attributes: ['id', 'leave_type']
+          }
+        ]
+
+      });
+
+      console.log("=================== leaveRequests call===================")
+      const leaveRequests = await LeaveApplication.findAll({
+        where: { user_id: req.user.id },
+        include: [
+          {
+            model: LeaveMaster,
+            as: 'LeaveType', // Ensure this matches the alias in the association
+            attributes: ['id', 'leave_type', 'no_of_leaves'],
+          },
+        ],
+      });
+
+      // manage leaves reqs data 
+      const leaveReqs = await Promise.all(
+        leaveRequests.map(async (leaveReq) => {
+          const getApproverdata = await User.findOne({
+            where: { id: leaveReq.handled_by }
+          });
+          return {
+            ...leaveReq.toJSON(),
+            approver: getApproverdata ? getApproverdata.toJSON() : null,
+          }
+        })
+
+      );
+
+
+      const departments = await Department.findAll();
+      const errorMessages = "";
+      res.render("userProfile", {
+        title: 'Profile',
+        empDetail: empDetail, empLeaveData: empLeaveData, leaveRequests: leaveReqs, errorMessages: errorMessages, departments: departments, moment: moment
+      });
+
+
+    } catch (error) {
+      res.status(error.status).send(error.message);
+    }
+  },
   
 
 };

@@ -5,7 +5,7 @@ const authorize = require('../middlewares/authorize');
 const profileController = require("../controllers/profileController");
 
 router.get("/user-profile", authorize(['Manager', 'Employee', 'Admin']), profileController.getUserProfileView);
-
+router.get("/notification", authorize(['Admin','Manager','Employee']), profileController.getNotification);
 router.post(
   "/upload-profile-picture", 
   authorize(['Manager', 'Employee', 'Admin']),  // Ensure that the user is authorized

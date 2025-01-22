@@ -12,14 +12,11 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 const http = require('http');
 const eetase = require('eetase');
-const socketClusterServer = require('socketcluster-server');
+const { initializeSocketServer } = require('./socketConfig/socketManager');
 
 const App = express();
 const server = http.createServer(App); // Use the same server instance for HTTP and WebSocket
 
-let options = {
-  // Add your socketClusterServer options here, if any.
-};
 
 // Middleware Setup
 App.use(express.json());
@@ -80,17 +77,12 @@ App.use((req, res) => {
 App.use(authorize);
 
 // Use eetase with the same server
-const httpServer = eetase(server); // Correctly wrap the server for WebSocket
-const agServer = socketClusterServer.attach(httpServer, options); // Attach SocketCluster to the same server
+const agServer = initializeSocketServer(server);
+module.exports = { agServer };
 
-(async () => {
-  for await (let { socket } of agServer.listener('connection')) {
-    console.log("New connection established. AuthState:", socket.id);
-  }
-})();
 
 // Start the server
 const PORT = process.env.PORT || 2000;
-httpServer.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running with WebSocket on http://localhost:${PORT}`);
 });

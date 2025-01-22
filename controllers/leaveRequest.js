@@ -1,6 +1,9 @@
 const moment = require("moment");
 const {LeaveApplication, Manager, User, EmployeeLeave,LeaveMaster,Department, Notification, sequelize, Sequelize} = require("../models");
 const { logMessage } = require("../services/logger");
+const socketClusterServer = require("socketcluster-server");
+const { sendNotification } = require('../notification/notificationService');
+const leavesMaster = require("./leavesMaster");
 
 module.exports = {
 
@@ -188,17 +191,41 @@ module.exports = {
             reqDetail.handled_at = sequelize.fn('NOW');
             await reqDetail.save();
 
+            const empLeaveData = await EmployeeLeave.findOne({
+              where: { leave_id: reqDetail.leave_type, user_id: reqDetail.user_id },
+              include: [
+                  {
+                      model: LeaveMaster,
+                      as: 'leave',
+                      attributes: ['id', 'leave_type', 'no_of_leaves']
+                  }
+              ]
+          });
+
             // Revert back balance to particular Emp leave
             if(req.body.status == "Reject"){
-                const empLeaveData = await EmployeeLeave.findOne({
-                    where: {user_id: reqDetail.user_id, leave_id: reqDetail.leave_type}
-                });
+               
 
             const usedLeaves = empLeaveData.used_leaves - reqDetail.total_days;
             empLeaveData.used_leaves = usedLeaves;
             await empLeaveData.save();
-                
-            }
+        }
+
+         // Create notification
+         const notificationMessage = `Leave request ${empLeaveData.leave.leave_type} has been ${reqDetail.status} by ${req.user.name}`;
+         console.log("notificationMessage========",notificationMessage);
+         const notification = await Notification.create({
+           user_id: reqDetail.user_id, // The user who is being notified
+           leave_type: empLeaveData.leave.id,
+           leave_req_id: reqDetail.id,  // Leave request ID
+           message: notificationMessage,
+           is_read: false,
+           created_at: sequelize.fn('NOW'),
+       }).then(async function (res) {
+         // Send notification via SocketCluster
+         const userSocketId = reqDetail.user_id.toString();
+         sendNotification(userSocketId, res.message);
+       });
             resp.json("updated");
         }
         
@@ -233,7 +260,9 @@ module.exports = {
               }
           ]
       });
-      
+
+            
+  
       // Calculate used leaves
       const usedLeaves = Number(employeeleveData.used_leaves) + Number(total_days);
       if (usedLeaves <= employeeleveData.assigned_leaves) {
@@ -257,12 +286,14 @@ module.exports = {
                   user_id: handlerData.created_by, // The user who is being notified
                   leave_type: employeeleveData.leave.id,
                   leave_req_id: res.id,  // Leave request ID
-                  message: `New leave request ${employeeleveData.leave.leave_type} from employee ID: ${empId} for ${total_days} days.`,
+                  message: `New leave request ${employeeleveData.leave.leave_type} from employee: ${handlerData.first_name} ${handlerData.last_name} for ${total_days} days.`,
                   is_read: false,
                   created_at: sequelize.fn('NOW'),
+              }).then(async function (res) {
+                // Send notification via SocketCluster
+                const userSocketId = handlerData.created_by.toString();
+                sendNotification(userSocketId, res.message);
               });
-
-              const userSocketId = handlerData.created_by.toString();
           });
   
           resp.json({ message: 'Leave applied successfully', status: true });
@@ -351,5 +382,69 @@ module.exports = {
       } catch (error) {
         res.status(error.status).send(error.message);
       }
+    },
+
+    getAllNotifications: async(req, res) => {
+      const limitFrom = parseInt(req.query.limitFrom) || 0; // Default to 0 if not provided
+      const limitTo = parseInt(req.query.limitTo) || 5;     // Default to 5 if not provided
+      
+      let unreadNotification = 0;
+      let readNotification = 0;
+      
+      try {
+          // Fetch notifications with pagination
+          const allNotifications = await Notification.findAll({
+              where: { user_id: req.user.id },
+              order: [['created_at', 'desc']],
+              offset: limitFrom,
+              limit: limitTo,
+          });
+      
+          // Separate counts for read and unread notifications
+          allNotifications.forEach(notification => {
+              if (notification.is_read) {
+                  readNotification++;
+              } else {
+                  unreadNotification++;
+              }
+          });
+      
+          // Fetch total count of unread notifications (for notification badge)
+          const unreadNotificationCount = await Notification.count({
+              where: { user_id: req.user.id, is_read: false },
+          });
+      
+          // Send response
+          return res.json({
+              allNotificationsData: allNotifications,
+              unreadNotificationCount: unreadNotificationCount,
+              totalNotificationsFetched: allNotifications.length,
+              readNotification: readNotification,
+              unreadNotification: unreadNotification,
+          });
+      }catch (error) {
+        console.error('Error fetching notifications:', error.message);
+        const statusCode = error.status || 500; // Default to 500 if error.status is undefined
+        res.status(statusCode).send({ message: error.message });
+      }
+    },
+    markAsRealAllNotification: async(req, res) =>{
+      try {
+        const getUnreadNotifications = await Notification.findAll({
+          where: {user_id: req.user.id, is_read: 0}
+        });
+        
+        getUnreadNotifications.forEach(async (notification)=>{
+          notification.is_read = 1;
+          await notification.save();
+        });
+        return res.json({status:200});
+      
+      } catch (error) {
+         console.error('Error update notifications:', error.message);
+        const statusCode = error.status || 500; // Default to 500 if error.status is undefined
+        res.status(statusCode).send({ message: error.message });
+      }
     }
+
 }
