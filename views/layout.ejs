@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <meta name="description" content="" />
     <meta name="author" content="" />
-    <title><%= title %></title>
+    <title>
+        <%= title %>
+    </title>
 
     <!-- Include CSS files -->
     <link href="/css/simple-datatables.min.css" rel="stylesheet" />
@@ -28,6 +31,7 @@
 
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
 </head>
+
 <body class="sb-nav-fixed">
     <div id="loader" style="display: none;">
         <div class="spinner-border" role="status">
@@ -37,39 +41,197 @@
     <!-- Include Header -->
     <%- include('common/header') %>
 
-    <div id="layoutSidenav">
-        <!-- Include Sidebar -->
-        <%- include('common/sidebar') %>
+        <div id="layoutSidenav">
+            <!-- Include Sidebar -->
+            <%- include('common/sidebar') %>
 
-        <div id="layoutSidenav_content">
-            <main>
-                <!-- Dynamic Body Content -->
-                <%- body %>
-            </main>
-            <!-- Include Footer -->
-            <%- include('common/footer') %>
+                <div id="layoutSidenav_content">
+                    <main>
+                        <!-- Dynamic Body Content -->
+                        <%- body %>
+                    </main>
+                    <!-- Include Footer -->
+                    <%- include('common/footer') %>
+                </div>
         </div>
-    </div>
 
-    <!-- Include JavaScript files -->
-    <!-- <script src="/js/jquery.js"></script> -->
-   
+        <!-- Include JavaScript files -->
+        <!-- <script src="/js/jquery.js"></script> -->
 
-    <script src="/js/scripts.js"></script>
-  
-    <!-- <script src="/js/datatable.min.js" crossorigin="anonymous"></script> -->
-    <!-- <script src="/js/datatables-simple-demo.js"></script> -->
-    <!-- <script src="https://cdn.jsdelivr.net/npm/socketcluster-client/socketcluster-client.min.js"></script> -->
-    <script src="/js/socketcluster-client.min.js"></script>
 
-    <script>
-        let socket = socketClusterClient.create({
-            hostname: 'localhost', // Replace with your server hostname
-            port: 2000, // Replace with your server port
+        <script src="/js/scripts.js"></script>
+
+        <script src="/js/socketcluster-client.min.js"></script>
+
+        <script>
+            (async () => {
+                let socket = socketClusterClient.create({
+                    hostname: 'localhost',
+                    port: 2000,
+                    path: '/socketcluster/',
+                    reconnectInterval: 1000, // Reconnect every second if connection is lost
+                    ackTimeout: 20000, // Increased timeout for acknowledgement
+                });
+
+                const userId = <%= user ?user.id: 'null' %>; // Inject user ID (admin or manager)
+
+                if (userId !== 'null') {
+                    console.log(`User ID: ${userId}`);
+
+                    // Subscribe to the specific user's notification channel
+                    let channel;
+                    try {
+                        // Subscribe to the channel
+                        channel = await socket.subscribe(`notification_${userId}`);
+                        console.log("Channel object:", channel);
+                        console.log("Channel state:", channel.state);
+
+                        // Wait for subscription to complete (retry mechanism if pending)
+                        const maxRetries = 10;
+                        let retries = 0;
+                        let isSubscribed = false;
+
+                        // Retry subscription logic if still pending
+                        while (retries < maxRetries && channel.state === 'pending') {
+                            await new Promise(resolve => setTimeout(resolve, 500)); // Wait for 500ms
+                            retries++;
+                        }
+
+                        // Final state check after retries
+                        if (channel.state === 'subscribed') {
+                            console.log(`Successfully subscribed to notification_${userId}`);
+                            isSubscribed = true;
+                        } else {
+                            console.error('Failed to subscribe after retries');
+                        }
+
+                        // Listen for incoming notifications on the channel
+                        if (isSubscribed) {
+
+                            for await (let data of channel) {
+                                console.log('Notification received:', data);
+                                if (data && data.total) {
+                                    $('#notificationDropdown').find('#notificationCount').text(data.total);
+                                    // alert(data.total);
+                                } else {
+                                    console.error('Received data does not have the expected structure:', data);
+                                }
+                            }
+                        }
+                    } catch (err) {
+                        console.error('Error during subscription:', err);
+                    }
+
+                } else {
+                    console.log('User is not logged in or userId is invalid.');
+                }
+
+                // Handle socket errors
+                try {
+                    for await (let error of socket.listener('error')) {
+                        console.error('Socket error:', error);
+                    }
+                } catch (err) {
+                    console.error('Error while handling socket errors:', err);
+                }
+            })();
+       
+            $(document).ready(function () {
+    // Open or close the notification panel
+    $('#notificationIcon').on('click', function () {
+        const panel = $('#notificationPanel');
+        if (panel.hasClass('d-none')) {
+            $('#header_notifications_length').val(5); // Reset limit to 5
+            getAllNotifications();
+            panel.removeClass('d-none');
+        } else {
+            panel.addClass('d-none');
+        }
+    });
+
+    // Close the notification panel
+    $('#closeNotificationPanel').on('click', function () {
+        $('#notificationPanel').addClass('d-none');
+    });
+
+    // Load more notifications
+    $('#loadMoreNotifications').on('click', function () {
+       
+        getAllNotifications(true);
+    });
+
+    // Fetch notifications
+    function getAllNotifications(isLoadMore = false) {
+        const limitFrom = 0;
+        if(isLoadMore){
+            const nextLimit = parseInt($('#header_notifications_length').val()) + 5;
+            $('#header_notifications_length').val(nextLimit);
+        }
+        const limitTo = $('#header_notifications_length').val();
+        $.ajax({
+            method: 'get',
+            url: '/leaves/get-all-notifications',
+            data: { limitFrom: limitFrom, limitTo: limitTo },
+            beforeSend: function () {
+                if (!isLoadMore) {
+                    $('#allNotificationsList').html('<li class="text-center py-2">Loading notifications...</li>');
+                }
+            },
+            success: function (response) {
+                const allNotifications = response.allNotificationsData;
+                let htmlContent = "";
+
+                allNotifications.forEach(notification => {
+                    const iconClass = notification.is_read ? 'text-success' : 'text-warning';
+                    const statusIcon = notification.is_read ? 'fa-check-circle' : 'fa-exclamation-circle';
+                    const formattedDate = new Date(notification.created_at).toLocaleString();
+
+                    htmlContent += `
+                    <li class="notification-item">
+                        <span class="notification-icon ${iconClass}" title="${notification.is_read ? 'Read' : 'Unread'}">
+                            <i class="fa ${statusIcon}"></i>
+                        </span>
+                        <div class="flex-grow-1">
+                            <p class="mb-0">${notification.message}</p>
+                            <small class="notification-date">${formattedDate}</small>
+                        </div>
+                    </li>`;
+                });
+
+                if (isLoadMore) {
+                    $('#allNotificationsList').append(htmlContent);
+                } else {
+                    $('#allNotificationsList').html(htmlContent);
+                }
+               
+               
+
+                if (allNotifications.length >= limitTo) {
+                    $('#loadMoreNotifications').show();
+                } else {
+                    $('#loadMoreNotifications').hide();
+                }
+
+               
+            },
+            error: function (error) {
+                console.error("Error fetching notifications:", error);
+                if (!isLoadMore) {
+                    $('#allNotificationsList').html('<li class="text-center py-2">Error loading notifications.</li>');
+                }
+            }
         });
-        console.log("Socket:", socket);
-    </script>
-</body>
+    }
 
-  
+    // Close the panel when clicking outside
+    $(document).on('click', function (event) {
+        if (!$(event.target).closest('#notificationWrapper').length) {
+            
+            $('#notificationPanel').addClass('d-none');
+        }
+    });
+});
+
+        </script>
+</body>
 </html>

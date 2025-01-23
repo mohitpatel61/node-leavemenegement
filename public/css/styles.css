@@ -11241,3 +11241,193 @@ body {
   font-size: 0.75rem;
   border-radius: 0.375rem !important;
 }
+
+/* Ensure the wrapper takes up space on the right of the header */
+#notificationWrapper {
+  position: relative;
+  display: inline-block;
+}
+
+/* Notification Icon (Bell) */
+#notificationIcon {
+  position: relative;
+  padding: 10px;
+  cursor: pointer;
+}
+
+/* Notification Badge */
+#notificationCount {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  font-size: 0.8rem;
+  padding: 3px 7px;
+}
+
+/* Style for the notification dropdown menu */
+#notificationDropdown {
+  right: 0;
+  left: auto;
+  max-width: 350px; /* Adjust max-width as per requirement */
+  padding: 0;
+  margin: 0;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  
+  position: absolute;
+  top: 100%;
+  
+  z-index: 1050; /* Make sure it's above other content */
+  width: 300px; /* Adjust width as needed */
+}
+
+/* Notification List */
+#allNotificationsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 300px;  /* Limit the height */
+  overflow-y: auto;   /* Enable scrolling if there are many notifications */
+}
+
+/* Notification Item */
+.notification-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  cursor: pointer;
+  border-bottom: 1px solid #f1f1f1;
+}
+
+.notification-item:hover {
+  background-color: #f8f9fa;
+}
+
+/* Load More Button */
+.load-more-container {
+  text-align: center;
+  padding: 10px 0;
+}
+
+/* Notification Icon Styles */
+.notification-icon {
+  font-size: 18px;
+  margin-right: 10px;
+}
+
+.text-success {
+  color: green;
+}
+
+.text-warning {
+  color: orange;
+}
+
+/* Notification Date */
+.notification-date {
+  font-size: 0.8rem;
+  color: #adb5bd;
+  text-align: right;
+}
+
+#notificationDropdown {
+ 
+}
+
+.dropdown-menu {
+  max-height: 300px;
+  overflow-y: auto; /* Adds a scroll if the dropdown is too long */
+}
+
+.notification-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 300px;
+  max-height: 400px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  overflow-y: auto;
+  z-index: 1050; /* Ensure it stays above other elements */
+  padding: 10px;
+}
+
+.notification-panel .panel-header {
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 8px;
+}
+
+.notification-panel .notification-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.notification-panel .notification-item:last-child {
+  border-bottom: none;
+}
+
+.d-none {
+  display: none !important;
+}
+
+.notification-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 350px; /* Increased width for readability */
+  max-height: 400px; /* Fixed height for scrollable area */
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  overflow: hidden; /* Hide scroll bars outside container */
+  z-index: 1050; /* Ensure it stays above other elements */
+  display: flex;
+  flex-direction: column; /* Align content vertically */
+}
+
+.panel-header {
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #ddd;
+}
+
+#allNotificationsListContainer {
+  flex: 1; /* Fill available space */
+  overflow-y: auto; /* Add vertical scrolling */
+  padding: 10px;
+}
+
+#allNotificationsList {
+  width: 100%; /* Full width for items */
+}
+
+.notification-item {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-icon {
+  flex-shrink: 0; /* Prevent icon from resizing */
+  margin-right: 10px;
+}
+
+.notification-date {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.load-more-btn {
+  margin: 5px 10px;
+  align-self: flex-end; /* Right-align the button */
+}

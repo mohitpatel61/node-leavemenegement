@@ -1,149 +1,183 @@
 <%- contentFor('body') %>
-<div class="container-fluid px-4">
-    <h1 class="mt-4">My leaves</h1>
-    <ol class="breadcrumb mb-4">
-        <li class="breadcrumb-item active">My leaves</li>
-    </ol>
+    <div class="container-fluid px-4">
+        <h1 class="mt-4">My leaves</h1>
+        <ol class="breadcrumb mb-4">
+            <li class="breadcrumb-item active">My leaves</li>
+        </ol>
 
-    <div class="card mb-4">
-        <div class="card-header">
-            <i class="fas fa-table me-1"></i> My leaves
-        </div>
-        <div class="card-body">
-            <div id="layoutAuthentication">
-                <div id="layoutAuthentication_content">
-                    <main>
-                        <div class="container">
-                            <div class="row justify-content-center">
-                                <div class="col-lg-9">
-                                    <!-- My Leaves Section -->
-                                    <div class="card shadow-lg border-0 rounded-lg mt-5">
-                                        <div class="card-header">
-                                            <h3 class="text-center font-weight-light my-4">My Leaves</h3>
-                                        </div>
-                                        <div class="card-body">
-                                            <div id="errorWhenApply" class="text-danger text-center mt-4 d-none"></div>
-                                            <div id="successApply" class="text-success text-center mt-4 d-none"></div>
-
-                                            <% empLeaveData.forEach(function(empLeave) { %>
-                                            <div class="leave-section mb-4">
-                                                <!-- Leave Type and Action -->
-                                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                                    <div>
-                                                        <h5 class="mb-0">Leave Type: <%= empLeave.leave.leave_type %></h5>
-                                                    </div>
-                                                    <button class="btn btn-primary btn-sm"
-                                                        onclick="applyForLeave(<%= empLeave.id %>, <%= empDetail.id %>, 'Employee')">Apply</button>
-                                                </div>
-
-                                                <!-- Leave Application Form -->
-                                                <div class="approve-div-<%= empLeave.id %> d-none p-3 border rounded bg-light" id="approveDiv" data-leave-id="<%= empLeave.id %>">
-                                                    <div class="row g-3">
-                                                        <div class="col-md-6">
-                                                            <label for="from_date_<%= empLeave.id %>" class="form-label">From Date</label>
-                                                            <input type="date" name="from_date" id="from_date_<%= empLeave.id %>" class="form-control">
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <label for="to_date_<%= empLeave.id %>" class="form-label">To Date</label>
-                                                            <input type="date" name="to_date" id="to_date_<%= empLeave.id %>" class="form-control">
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <label for="total_days_<%= empLeave.id %>" class="form-label">Total Days</label>
-                                                            <input type="text" name="total_days" id="total_days_<%= empLeave.id %>" class="form-control" readonly>
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <label for="reason_<%= empLeave.id %>" class="form-label">Reason</label>
-                                                            <textarea name="reason" id="reason_<%= empLeave.id %>" class="form-control"></textarea>
-                                                        </div>
-                                                    </div>
-                                                    <div class="text-end mt-3">
-                                                        <div id="error_<%= empLeave.id %>" class="text-danger d-none mb-2"></div>
-                                                        <button class="btn btn-success btn-sm applyLeave">Submit</button>
-                                                        <button class="btn btn-secondary btn-sm cancel-leave">Cancel</button>
-                                                    </div>
-                                                </div>
-
-                                                <!-- Leave Summary -->
-                                                <div class="row text-center mt-4">
-                                                    <div class="col-md-4">
-                                                        <strong>Total Allocated:</strong> <%= empLeave.assigned_leaves %>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <strong>Total Used:</strong> <%= empLeave.used_leaves %>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <strong>Balance:</strong> <%= empLeave.assigned_leaves - empLeave.used_leaves %>
-                                                    </div>
-                                                </div>
-                                                <hr>
-                                            </div>
-                                            <% }); %>
-                                        </div>
-                                    </div>
-
-                                    <!-- Leave Requests Section -->
-                                    <% if (leaveRequests.length > 0) { %>
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-table me-1"></i> My leaves
+            </div>
+            <div class="card-body">
+                <div id="layoutAuthentication">
+                    <div id="layoutAuthentication_content">
+                        <main>
+                            <div class="container">
+                                <div class="row justify-content-center">
+                                    <div class="col-lg-9">
+                                        <!-- My Leaves Section -->
                                         <div class="card shadow-lg border-0 rounded-lg mt-5">
                                             <div class="card-header">
-                                                <h3 class="text-center font-weight-light my-4">Leave Requests</h3>
+                                                <h3 class="text-center font-weight-light my-4">My Leaves</h3>
                                             </div>
                                             <div class="card-body">
-                                                <% leaveRequests.forEach(function(leaveReq) { %>
-                                                <div class="leave-request-section mb-4">
-                                                    <div class="row mb-2">
-                                                        <div class="col-md-6">
-                                                            <strong>Leave Type:</strong> <%= leaveReq.LeaveType.leave_type %>
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <strong>Total Applied Leaves:</strong> <%= leaveReq.total_days %>
-                                                        </div>
-                                                    </div>
-                                                    <div class="row mb-2">
-                                                        <div class="col-md-12">
-                                                            <strong>Leave Duration:</strong> 
-                                                            From <%= leaveReq.leave_from ? moment(leaveReq.leave_from).format('DD-MM-YYYY') : 'N/A' %> 
-                                                            To <%= leaveReq.leave_to ? moment(leaveReq.leave_to).format('DD-MM-YYYY') : 'N/A' %>
-                                                        </div>
-                                                    </div>
-                                                    <div class="row mb-2">
-                                                        <div class="col-md-12">
-                                                            <strong>Reason:</strong> <%= leaveReq.reason %>
-                                                        </div>
-                                                    </div>
-                                                    <div class="row mb-2">
-                                                        <div class="col-md-6">
-                                                            <strong>Status:</strong> 
-                                                            <% if(leaveReq.status === 'Pending') { %>
-                                                            <span class="badge bg-warning text-dark">Pending</span>
-                                                            <% } else if(leaveReq.status === 'Approved') { %>
-                                                            <span class="badge bg-success">Approved</span>
-                                                            <% } else { %>
-                                                            <span class="badge bg-danger">Rejected</span>
-                                                            <% } %>
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <strong>Approver:</strong> 
-                                                            <%= leaveReq.approver.first_name %> <%= leaveReq.approver.last_name %> (<%= leaveReq.approver.role %>)
-                                                        </div>
-                                                    </div>
-                                                    <hr>
+                                                <div id="errorWhenApply" class="text-danger text-center mt-4 d-none">
                                                 </div>
-                                                <% }); %>
+                                                <div id="successApply" class="text-success text-center mt-4 d-none">
+                                                </div>
+
+                                                <% empLeaveData.forEach(function(empLeave) { %>
+                                                    <div class="leave-section mb-4">
+                                                        <!-- Leave Type and Action -->
+                                                        <div
+                                                            class="d-flex justify-content-between align-items-center mb-3">
+                                                            <div>
+                                                                <h5 class="mb-0">Leave Type: <%=
+                                                                        empLeave.leave.leave_type %>
+                                                                </h5>
+                                                            </div>
+                                                            <button class="btn btn-primary btn-sm"
+                                                                onclick="applyForLeave(<%= empLeave.id %>, <%= empDetail.id %>, 'Employee')">Apply</button>
+                                                        </div>
+
+                                                        <!-- Leave Application Form -->
+                                                        <div class="approve-div-<%= empLeave.id %> d-none p-3 border rounded bg-light"
+                                                            id="approveDiv" data-leave-id="<%= empLeave.id %>">
+                                                            <div class="row g-3">
+                                                                <div class="col-md-6">
+                                                                    <label for="from_date_<%= empLeave.id %>"
+                                                                        class="form-label">From Date</label>
+                                                                    <input type="date" name="from_date"
+                                                                        id="from_date_<%= empLeave.id %>"
+                                                                        class="form-control">
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <label for="to_date_<%= empLeave.id %>"
+                                                                        class="form-label">To Date</label>
+                                                                    <input type="date" name="to_date"
+                                                                        id="to_date_<%= empLeave.id %>"
+                                                                        class="form-control">
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <label for="total_days_<%= empLeave.id %>"
+                                                                        class="form-label">Total Days</label>
+                                                                    <input type="text" name="total_days"
+                                                                        id="total_days_<%= empLeave.id %>"
+                                                                        class="form-control" readonly>
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <label for="reason_<%= empLeave.id %>"
+                                                                        class="form-label">Reason</label>
+                                                                    <textarea name="reason"
+                                                                        id="reason_<%= empLeave.id %>"
+                                                                        class="form-control"></textarea>
+                                                                </div>
+                                                            </div>
+                                                            <div class="text-end mt-3">
+                                                                <div id="error_<%= empLeave.id %>"
+                                                                    class="text-danger d-none mb-2"></div>
+                                                                <button
+                                                                    class="btn btn-success btn-sm applyLeave">Submit</button>
+                                                                <button
+                                                                    class="btn btn-secondary btn-sm cancel-leave">Cancel</button>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Leave Summary -->
+                                                        <div class="row text-center mt-4">
+                                                            <div class="col-md-4">
+                                                                <strong>Total Allocated:</strong>
+                                                                <%= empLeave.assigned_leaves %>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <strong>Total Used:</strong>
+                                                                <%= empLeave.used_leaves %>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <strong>Balance:</strong>
+                                                                <%= empLeave.assigned_leaves - empLeave.used_leaves %>
+                                                            </div>
+                                                        </div>
+                                                        <hr>
+                                                    </div>
+                                                    <% }); %>
                                             </div>
                                         </div>
-                                        <%
-                                    }
-                                    %>
-                                    
+
+                                        <!-- Leave Requests Section -->
+                                        <% if (leaveRequests.length> 0) { %>
+                                            <div class="card shadow-lg border-0 rounded-lg mt-5">
+                                                <div class="card-header">
+                                                    <h3 class="text-center font-weight-light my-4">Leave Requests</h3>
+                                                </div>
+                                                <div class="card-body">
+                                                    <% leaveRequests.forEach(function(leaveReq) { %>
+                                                        <div class="leave-request-section mb-4">
+                                                            <div class="row mb-2">
+                                                                <div class="col-md-6">
+                                                                    <strong>Leave Type:</strong>
+                                                                    <%= leaveReq.LeaveType.leave_type %>
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <strong>Total Applied Leaves:</strong>
+                                                                    <%= leaveReq.total_days %>
+                                                                </div>
+                                                            </div>
+                                                            <div class="row mb-2">
+                                                                <div class="col-md-12">
+                                                                    <strong>Leave Duration:</strong>
+                                                                    From <%= leaveReq.leave_from ?
+                                                                        moment(leaveReq.leave_from).format('DD-MM-YYYY')
+                                                                        : 'N/A' %>
+                                                                        To <%= leaveReq.leave_to ?
+                                                                            moment(leaveReq.leave_to).format('DD-MM-YYYY')
+                                                                            : 'N/A' %>
+                                                                </div>
+                                                            </div>
+                                                            <div class="row mb-2">
+                                                                <div class="col-md-12">
+                                                                    <strong>Reason:</strong>
+                                                                    <%= leaveReq.reason %>
+                                                                </div>
+                                                            </div>
+                                                            <div class="row mb-2">
+                                                                <div class="col-md-6">
+                                                                    <strong>Status:</strong>
+                                                                    <% if(leaveReq.status==='Pending' ) { %>
+                                                                        <span
+                                                                            class="badge bg-warning text-dark">Pending</span>
+                                                                        <% } else if(leaveReq.status==='Approved' ) { %>
+                                                                            <span
+                                                                                class="badge bg-success">Approved</span>
+                                                                            <% } else { %>
+                                                                                <span
+                                                                                    class="badge bg-danger">Rejected</span>
+                                                                                <% } %>
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <strong>Approver:</strong>
+                                                                    <%= leaveReq.approver.first_name %>
+                                                                        <%= leaveReq.approver.last_name %> (<%=
+                                                                                leaveReq.approver.role %>)
+                                                                </div>
+                                                            </div>
+                                                            <hr>
+                                                        </div>
+                                                        <% }); %>
+                                                </div>
+                                            </div>
+                                            <% } %>
+
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </main>
+                        </main>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
 
 
@@ -152,21 +186,39 @@
             // Set default date for all leave applications
             let today = new Date().toISOString().split('T')[0];
             $('input[name="from_date"], input[name="to_date"]').val(today);
-    
+
+             // Set default total_days as 1 for each leave application on page load
+            $('[id^="approveDiv"]').each(function () {
+                const leaveId = $(this).data('leave-id');
+                const totalDaysInput = $(`#total_days_${leaveId}`);
+                const errorSpan = $(`#error_${leaveId}`);
+                const fromDate = $(`#from_date_${leaveId}`).val();
+                const toDate = $(`#to_date_${leaveId}`).val();
+
+                const res = calculateDateDifference(fromDate, toDate);
+                totalDaysInput.val(''); // Clear the total days field
+                errorSpan.addClass('d-none').text(''); // Clear error message
+
+                if (res.isValid) {
+                    totalDaysInput.val(res.diffDays);
+                } else {
+                    errorSpan.removeClass('d-none').text(res.message);
+                }
+            });
             // Bind date change events dynamically for all leave types
             $(document).on('change', 'input[name="from_date"], input[name="to_date"]', function () {
-                
+
                 const leaveId = $(this).closest('#approveDiv').data('leave-id');
                 $(`#total_days_${leaveId}`).val('');
                 const fromDate = $(`#from_date_${leaveId}`).val();
                 const toDate = $(`#to_date_${leaveId}`).val();
                 const totalDaysInput = $(`#total_days_${leaveId}`);
                 const errorSpan = $(`#error_${leaveId}`);
-    
+
                 const res = calculateDateDifference(fromDate, toDate);
                 totalDaysInput.val(''); // Clear the total days field
                 errorSpan.addClass('d-none').text(''); // Clear error message
-    
+
                 if (res.isValid) {
                     totalDaysInput.val(res.diffDays);
                 } else {
@@ -174,41 +226,48 @@
                 }
             });
         });
-    
+        
+
         function calculateDateDifference(fromDate, toDate) {
             if (!fromDate || !toDate) {
                 return { isValid: false, message: 'Please select both dates.' };
             }
-    
-            if (new Date(toDate) <= new Date(fromDate)) {
+
+            const from = new Date(fromDate);
+            const to = new Date(toDate);
+
+            if (to < from) {
                 return { isValid: false, message: 'The "To date" must be greater than the "From date".' };
             }
-    
+
+            if (to.getTime() === from.getTime()) {
+                return { isValid: true, diffDays: 1 };
+            }
+
             // Calculate difference in days
-            let from = new Date(fromDate);
-            let to = new Date(toDate);
-            let diffTime = Math.abs(to - from);
-            let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+            const diffTime = Math.abs(to - from);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
             return { isValid: true, diffDays: diffDays };
         }
-    
+
+
         function applyForLeave(leaveId, empId, appliedBy) {
             const approveDiv = $(`.approve-div-${leaveId}`);
             approveDiv.removeClass('d-none');
-    
+
             // Cancel button functionality
             approveDiv.find('.cancel-leave').off('click').on('click', function () {
                 approveDiv.addClass('d-none');
             });
-    
+
             // Apply button functionality
             approveDiv.find('.applyLeave').off('click').on('click', function () {
                 const fromDate = $(`#from_date_${leaveId}`).val();
                 const toDate = $(`#to_date_${leaveId}`).val();
                 const totalDaysInput = $(`#total_days_${leaveId}`);
                 const errorSpan = $(`#error_${leaveId}`);
-    
+
                 // Validate the dates
                 const validationResult = calculateDateDifference(fromDate, toDate);
                 if (!validationResult.isValid) {
@@ -217,7 +276,7 @@
                 } else {
                     errorSpan.addClass('d-none').text('');
                 }
-    
+
                 // Prepare data
                 const data = { empId, appliedBy, leaveId, from_date: fromDate, to_date: toDate };
                 approveDiv.find('textarea, input').each(function () {
@@ -226,7 +285,7 @@
                         data[name] = $(this).val();
                     }
                 });
-    
+
                 // Send AJAX request
                 $.ajax({
                     method: 'POST',
@@ -235,16 +294,16 @@
                     success: function (response) {
                         const successApply = $('#successApply');
                         const errorWhenApply = $('#errorWhenApply');
-    
+
                         successApply.addClass('d-none').text('');
                         errorWhenApply.addClass('d-none').text('');
-    
+
                         if (response.status) {
                             successApply.removeClass('d-none').text(response.message);
                         } else {
                             errorWhenApply.removeClass('d-none').text(response.message);
                         }
-    
+
                         setTimeout(function () {
                             location.reload();
                         }, 3000);
@@ -256,4 +315,3 @@
             });
         }
     </script>
-    
