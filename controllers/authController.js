@@ -26,7 +26,7 @@ module.exports = {
   userLogin: async (req, res) => {
     try {
       const errors = validationResult(req); // Collect validation errors
-    
+
 
       if (!errors.isEmpty()) {
         // If validation errors exist, return to the form with error messages
@@ -46,7 +46,7 @@ module.exports = {
           include: [
             {
               model: Department,
-              as : 'department',
+              as: 'department',
               attributes: ['id', 'department_name']
             }
           ]
@@ -56,16 +56,16 @@ module.exports = {
       const userInfo = await checkuserData(email);
       // console.log(emailCheck);return false;
       if (!userInfo) {
-       
+
         req.flash("error", "Invalid email or password");
-        logMessage('info','logs/userLogin.log','User not found for Login data = '+req.body.email+ 'Password = '+req.body.password);
+        logMessage('info', 'logs/userLogin.log', 'User not found for Login data = ' + req.body.email + 'Password = ' + req.body.password);
         return res.redirect("/user/login"); // Redirect back to form if email exists
       }
 
       const isMatch = await bcrypt.compare(password, userInfo.password);
       if (!isMatch) {
         req.flash("error", "Invalid email or password");
-        logMessage('info','logs/userLogin.log','Password is Not match Login data = '+req.body.email+ 'Password = '+req.body.password);
+        logMessage('info', 'logs/userLogin.log', 'Password is Not match Login data = ' + req.body.email + 'Password = ' + req.body.password);
         return res.redirect("/user/login"); // Redirect back to form if email exists
       }
 
@@ -82,11 +82,12 @@ module.exports = {
         departmentName: userInfo?.department?.department_name,
         role: userInfo.role,
         name: `${userInfo.first_name} ${userInfo.last_name}`,
-        email: userInfo.email
+        email: userInfo.email,
+        password: userInfo.password
       };
 
       req.flash("success", "Login successfully!");
-      
+
       return res.redirect("/dashboard"); // Redirect back to the form after success
 
     } catch (error) {
@@ -100,7 +101,7 @@ module.exports = {
     try {
       // Set flash message before destroying the session
       req.flash("success", "Log out successfully .....");
-  
+
       // Destroy the session
       req.session.destroy((err) => {
         if (err) {
@@ -108,7 +109,7 @@ module.exports = {
           req.flash("error", "Failed to log out. Please try again.");
           return res.redirect('/profile');
         }
-  
+
         // Redirect after session destruction
         return res.redirect('/user/login');
       });
@@ -117,7 +118,61 @@ module.exports = {
       req.flash("error", "Failed to Log out. Please try again.");
       return res.redirect('/profile');
     }
-  }  
-  
+  },
+
+  getChangePasswordView: async (req, res) => {
+    try {
+      const errorMessages = "";
+
+      res.render("changepassword", {
+        title: 'Change password', errorMessages,
+        userData: req.body
+      });
+    } catch (error) {
+      res.status(error.status).send(error.message);
+    }
+  },
+
+  changePassword: async(req,res) => {
+    try {
+      const errors = validationResult(req); // Collect validation errors
+
+
+      if (!errors.isEmpty()) {
+        // If validation errors exist, return to the form with error messages
+        const errorMessages = errors.array().map((error) => error.msg);
+        return res.render("changepassword", {
+          title: "Change password",
+          errorMessages,
+          userData: req.body, // Pre-fill form with submitted data
+        });
+      }
+
+      const {currentPassword, newPassword, confirmPassword} = req.body;
+      const isMatch = await bcrypt.compare(currentPassword, req.session.user.password);
+      console.log("Compare password",isMatch);
+      if(!isMatch){
+        req.flash("error", "Please enter correct current password....");
+        // logMessage('info', 'logs/userLogin.log', 'User not found for Login data = ' + req.body.email + 'Password = ' + req.body.password);
+        return res.redirect("/user/change-password"); // Redirect back to form if email exists
+      }
+      
+    const getLoginUserData = await User.findOne({
+      where: {id: req.session.user.id}
+    });
+     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    getLoginUserData.password=hashedNewPassword;
+    getLoginUserData.save();
+    req.flash("success", "Password has been updated");
+    // logMessage('info', 'logs/userLogin.log', 'User not found for Login data = ' + req.body.email + 'Password = ' + req.body.password);
+    return res.redirect("/user/change-password"); // Redirect back to form if email exists
+
+    } catch (error) {
+      // res.json(error.message)
+      logMessage('info', 'logs/chagepassword.log', 'Error when change password: '+error+'');
+
+    }
+  }
+
 
 };

@@ -5,7 +5,7 @@ const authorize = require('../middlewares/authorize');
 const authController = require("../controllers/authController");
 
 router.get("/login", authController.getLoginView);
-
+router.get("/change-password", authController.getChangePasswordView);
 router.post(
   "/login",
   [
@@ -20,4 +20,23 @@ router.get(
   authController.logout
 );
 
+router.post(
+  "/change-password",
+  [
+    body("currentPassword").trim().isLength({ min: 1 }).withMessage("Current password is required").escape(),
+    body("newPassword").trim().isLength({ min: 1 }).withMessage("New password is required").escape(),
+    body("confirmPassword")
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage("Confirm Password is required")
+    .escape()
+    .custom((value, { req }) => {
+      if (value !== req.body.newPassword) {
+        throw new Error("Passwords do not match");
+      }
+      return true;
+    }),
+  ],
+  authController.changePassword
+);
 module.exports = router;

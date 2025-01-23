@@ -126,7 +126,7 @@ module.exports = {
             attributes: ['id', 'first_name', 'last_name'],
           }
         ],
-        attributes: ['id', 'first_name', 'last_name', 'email', 'role', 'status','pin_code','address', 'profile_image', 'thumbnail_image']
+        attributes: ['id', 'first_name', 'last_name', 'email', 'role','department_id', 'status','pin_code','address', 'profile_image', 'thumbnail_image']
       });
 
 
@@ -151,15 +151,20 @@ module.exports = {
             model: LeaveMaster,
             as: 'LeaveType', // Ensure this matches the alias in the association
             attributes: ['id', 'leave_type', 'no_of_leaves'],
+            
           },
         ],
+        order: [['created_at', 'DESC']], // Order by apply_date in descending order
+        limit: 5, // Get only the last 5 records
       });
+
 
       // manage leaves reqs data 
       const leaveReqs = await Promise.all(
         leaveRequests.map(async (leaveReq) => {
           const getApproverdata = await User.findOne({
-            where: { id: leaveReq.handled_by }
+            where: { id: leaveReq.handled_by },
+            
           });
           return {
             ...leaveReq.toJSON(),
@@ -168,7 +173,6 @@ module.exports = {
         })
 
       );
-
 
       const departments = await Department.findAll();
       const errorMessages = "";
@@ -242,6 +246,7 @@ module.exports = {
           departments,
           empLeaveData: empLeaveData,
            leaveRequests: leaveReqs,
+           moment: moment,
           empDetail: getUserData, // Pre-fill form with submitted data
         });
       }
