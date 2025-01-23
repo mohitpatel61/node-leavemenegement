@@ -33,17 +33,17 @@ module.exports = {
       const whereClause = searchValue
         ? {
             [Sequelize.Op.or]: [
-              { first_name: { [Sequelize.Op.iLike]: `%${searchValue}%` } },
-              { last_name: { [Sequelize.Op.iLike]: `%${searchValue}%` } },
-              { email: { [Sequelize.Op.iLike]: `%${searchValue}%` } },
+              { first_name: { [Sequelize.Op.like]: `%${searchValue}%` } },
+              { last_name: { [Sequelize.Op.like]: `%${searchValue}%` } },
+              { email: { [Sequelize.Op.like]: `%${searchValue}%` } },
             ],
           }
         : {};
 
       // Fetch employees with pagination
       const { count, rows } = await User.findAndCountAll({
-        where: whereClause,
-        where :{ created_by: userId},
+        where: { ...whereClause, created_by: userId},
+        // where :{ created_by: userId},
         include: [
           {
             model: Department,

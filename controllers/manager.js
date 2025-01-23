@@ -3,7 +3,7 @@
 
 // const Manager = require("../models/Manager");
 const { validationResult } = require('express-validator');
-const { User, Department, Sequeliz, LeaveMaster, EmployeeLeave, LeaveApplication } = require('../models'); // Import the ManagerUser model
+const { User, Department, Sequeliz, LeaveMaster, EmployeeLeave, LeaveApplication, Sequelize } = require('../models'); // Import the ManagerUser model
 const { where, Op } = require('sequelize');
 const bcrypt = require('bcrypt');
 const moment = require('moment');
@@ -36,8 +36,7 @@ module.exports = {
     
       // Fetch Manager with pagination
       const { count, rows } = await User.findAndCountAll({
-        where: whereClause,
-        where: {role: 'Manager'},
+        where: {...whereClause, role: 'Manager'},
         include: [
           {
             model: Department,

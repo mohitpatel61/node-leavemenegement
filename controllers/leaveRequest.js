@@ -9,96 +9,105 @@ module.exports = {
           
          
           
-          const draw = parseInt(req.body.draw) || 1; // DataTable draw counter
-          const start = parseInt(req.body.start) || 0; // Start index
-          const length = parseInt(req.body.length) || 10; // Records per page
-          const searchValue = req.body.search || ''; // Search value
-          const orderColumn = req.body.order?.[0]?.column || 0; // Ordered column index
-          const orderDir = req.body.order?.[0]?.dir || 'asc'; // Order direction (asc/desc)
+          const draw = parseInt(req.body.draw, 10) || 1;
+          const start = Math.max(0, parseInt(req.body.start, 10)) || 0;
+          const length = Math.min(100, parseInt(req.body.length, 10)) || 10;
+          const searchValue = req.body.search || '';
+          const orderColumn = parseInt(req.body.order?.[0]?.column, 10) || 0;
+          const orderDir = req.body.order?.[0]?.dir === 'desc' ? 'desc' : 'asc';
+          
           const orderMapping = {
-            0: ['created_at', orderDir], // Column index 0 - created_at
-            1: [{ model: User, as: 'Applicant' }, 'first_name', orderDir], // Column index 1 - requestername
-            2: [{ model: User, as: 'Applicant' }, { model: Department, as: 'department' }, 'department_name', orderDir], // Column index 2 - department
-            3: [{ model: LeaveMaster, as: 'LeaveType' }, 'leave_type', orderDir], // Column index 3 - leave_type
+            0: ['created_at', orderDir],
+            1: [{ model: User, as: 'Applicant' }, 'first_name', orderDir],
+            2: [{ model: User, as: 'Applicant' }, { model: Department, as: 'department' }, 'department_name', orderDir],
+            3: [{ model: LeaveMaster, as: 'LeaveType' }, 'leave_type', orderDir],
           };
           const orderClause = orderMapping[orderColumn] || ['created_at', 'asc'];
           const offset = start;
           const limit = length;
-    
           
-          // Access decoded user data
+          // User information
           const userId = req.user.id;
           const userRole = req.user.role;
-          const userName = req.user.name;
-          const userEmail = req.user.email;
           
-          // Build the "where" clause for search
+          // Search filter
           const whereClause = searchValue
-            ? {
-                [Sequelize.Op.or]: [
-                  { first_name: { [Sequelize.Op.iLike]: `%${searchValue}%` } },
-                  { last_name: { [Sequelize.Op.iLike]: `%${searchValue}%` } },
-                  { email: { [Sequelize.Op.iLike]: `%${searchValue}%` } },
-                ],
-              }
-            : {};
-              
-            console.log("=================== leaveRequests get data===================")
-            const whereClauseForRole = userRole === 'Manager' || userRole === 'Admin' 
+          ? {
+              [Sequelize.Op.or]: [
+                Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('Applicant.first_name')), {
+                  [Sequelize.Op.like]: `%${searchValue.toLowerCase()}%`,
+                }),
+                Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('Applicant.last_name')), {
+                  [Sequelize.Op.like]: `%${searchValue.toLowerCase()}%`,
+                }),
+                Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('Applicant.email')), {
+                  [Sequelize.Op.like]: `%${searchValue.toLowerCase()}%`,
+                }),
+                Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('LeaveType.leave_type')), {
+                  [Sequelize.Op.like]: `%${searchValue.toLowerCase()}%`,
+                }),
+                Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('Applicant->department.department_name')), {
+                  [Sequelize.Op.like]: `%${searchValue.toLowerCase()}%`,
+                }),
+              ],
+            }
+          : {};
+        
+          
+          // Role-based filter
+          const whereClauseForRole = userRole === 'Manager' || userRole === 'Admin' 
             ? { handled_by: userId }
             : { user_id: userId };
           
-          
+          try {
             const { count, rows } = await LeaveApplication.findAndCountAll({
-                where: { ...whereClause, ...whereClauseForRole},
-                include: [
+              where: { ...whereClause, ...whereClauseForRole },
+              include: [
                 {
-                    model: LeaveMaster,
-                    as: 'LeaveType', // Ensure this matches the alias in the association
-                    attributes: ['id', 'leave_type', 'no_of_leaves'],
+                  model: LeaveMaster,
+                  as: 'LeaveType',
+                  attributes: ['id', 'leave_type', 'no_of_leaves'],
                 },
                 {
-                   model: User,
-                   as: 'Applicant',
-                   attributes: ['id','first_name', 'last_name'],
-
-                   include:[
+                  model: User,
+                  as: 'Applicant',
+                  attributes: ['id', 'first_name', 'last_name'],
+                  include: [
                     {
-                    model: Department,
-                    as: 'department',
-                    attributes: ['id','department_name'],
-                    }
-                  ]
+                      model: Department,
+                      as: 'department',
+                      attributes: ['id', 'department_name'],
+                    },
+                  ],
                 },
-               
-              
-                ],
-                order: [orderClause],
-                limit,
-                offset,
-              });
-            
+              ],
+              order: [orderClause],
+              limit,
+              offset,
+            });
+        
+            const data = rows.map((leaveReq) => ({
+              id: leaveReq.id,
+              requestername: `${leaveReq.Applicant.first_name} ${leaveReq.Applicant.last_name}`,
+              department: `${leaveReq.Applicant.department.department_name}`, 
+              leave_type: leaveReq.LeaveType.leave_type,          
+              created_at: new Date(leaveReq.created_at).toLocaleString(),
+              status: leaveReq.status,
+            }));
+      
+            // Return JSON response for DataTables
+            res.json({
+              draw,
+              recordsTotal: count, // Total records
+              recordsFiltered: count, // Filtered records
+              data, // Paginated data
+            });
 
-          
-          // Format rows for DataTables
-          const data = rows.map((leaveReq) => ({
-          
-            id: leaveReq.id,
-            requestername: `${leaveReq.Applicant.first_name} ${leaveReq.Applicant.last_name}`,
-            department: `${leaveReq.Applicant.department.department_name}`, 
-            leave_type: leaveReq.LeaveType.leave_type,          
-            created_at: new Date(leaveReq.created_at).toLocaleString(),
-            status: leaveReq.status,
-            
-          }));
-    
-          // Return JSON response for DataTables
-          res.json({
-            draw,
-            recordsTotal: count, // Total records
-            recordsFiltered: count, // Filtered records
-            data, // Paginated data
-          });
+          } catch (error) {
+            console.error("Error fetching leave requests:", error);
+            res.status(500).json({ error: "Failed to fetch leave requests" });
+          }
+   
         } catch (error) {
           console.error("Error :", error.message);
           res.status(500).json({ error: 'Internal Server Error' });
