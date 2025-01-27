@@ -1,0 +1,103 @@
+<%- contentFor('body') %>
+
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Import Employee</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item active">Import Employee</li>
+    </ol>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            Import Employee
+        </div>
+        <div class="card-body">
+            <div id="layoutAuthentication">
+                <div id="layoutAuthentication_content">
+                    <main>
+                        <div class="container">
+                            <div class="row justify-content-center">
+                                <div class="col-lg-7">
+                                    <div class="card shadow-lg border-0 rounded-lg mt-5">
+                                        <div class="card-header"><h3 class="text-center font-weight-light my-4">Import Employee</h3></div>
+                                        <div class="card-body">
+                                            <% if (success && success.length) { %>
+                                                <div class="alert alert-success">
+                                                    <%= success %>
+                                                </div>
+                                            <% } %>
+
+                                            <% if (errorMessages && errorMessages.length > 0) { %>
+                                                <div class="alert alert-danger">
+                                                    <ul>
+                                                        <% errorMessages.forEach(function(msg) { %>
+                                                            <li><%= msg %></li>
+                                                        <% }); %>
+                                                    </ul>
+                                                </div>
+                                            <% } %>
+
+                                            <% if (results) { %>
+                                                <div class="alert alert-info">
+                                                    <strong>Processing Results:</strong>
+                                                    <ul>
+                                                        <li>Inserted: <%= results.inserted %></li>
+                                                        <% if (results.duplicates.length > 0) { %>
+                                                            <li>Duplicates: <%= results.duplicates.join(', ') %></li>
+                                                        <% } %>
+                                                        <% if (results.invalid.length > 0) { %>
+                                                            <li>Invalid Entries:</li>
+                                                            <ul>
+                                                                <% results.invalid.forEach(function(item) { %>
+                                                                    <li>
+                                                                        <strong>Row:</strong>
+                                                                        <%= JSON.stringify(item.row) %>
+                                                                        <ul>
+                                                                            <% item.errors.forEach(function(error) { %>
+                                                                                <li><%= error %></li>
+                                                                            <% }); %>
+                                                                        </ul>
+                                                                    </li>
+                                                                <% }); %>
+                                                            </ul>
+                                                        <% } %>
+                                                    </ul>
+                                                </div>
+                                            <% } %>
+
+                                            <form action="/employee/import-data" method="post" accept-charset="utf-8" enctype="multipart/form-data">
+                                                <div class="row mb-3">
+                                                    <div class="col-md-6">
+                                                        <div class="form-floating mb-3 mb-md-0">
+                                                            <input class="form-control" name="excelData" id="excelData" type="file" />
+                                                            <label for="excelData">File</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row mb-3">
+                                                    <div class="col-md-6">
+                                                        <div class="form-floating mb-3 mb-md-0">
+                                                           <a href="/importDataFiles/importSample.xlsx">View sample file</a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="mt-4 mb-0">
+                                                    <div class="d-grid">
+                                                        <button type="submit" class="btn btn-primary btn-block">Import</button>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="/js/datatable-config.js"></script>
+<script src="/js/employee/employee.js"></script>

@@ -80,6 +80,7 @@ module.exports = {
       req.session.user = {
         id: userInfo.id,
         departmentName: userInfo?.department?.department_name,
+        departmentId: userInfo?.department?.id,
         role: userInfo.role,
         name: `${userInfo.first_name} ${userInfo.last_name}`,
         email: userInfo.email,

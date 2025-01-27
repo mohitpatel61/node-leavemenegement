@@ -2,12 +2,14 @@ const express = require("express");
 const router = express.Router();
 const { body } = require("express-validator");
 const authorize = require('../middlewares/authorize');
-
 const employeeController = require("../controllers/employee");
+const multer = require("multer");
+const upload = multer({ dest: "uploads/empData/" }); // Specify the upload folder
 
 router.get('/view-emp/:id', authorize('Manager'), employeeController.getEmpDetail);
 router.get('/edit-emp/:id', authorize('Manager'), employeeController.getEmpDetail);
 router.get("/", authorize('Manager'), employeeController.getEmployeeListView);
+router.get('/import-data', authorize('Manager'), employeeController.getEmpImportForm);
 router.post("/emp-ajax", authorize('Manager'), employeeController.getAjaxEmployee);
 
 
@@ -33,6 +35,14 @@ router.post(
       }),
   ],
   employeeController.addEmp
+);
+
+
+router.post(
+  "/import-data",
+  authorize("Manager"),
+  upload.single("excelData"), // Handle single file upload
+  employeeController.importEmp
 );
 
 router.patch('/delete-emp/:id', authorize(['Manager']), employeeController.deleteEmp);

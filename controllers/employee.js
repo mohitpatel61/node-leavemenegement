@@ -4,13 +4,15 @@ const { User, Department, Sequelize, EmployeeLeave, LeaveMaster, LeaveApplicatio
 const { EmptyResultError, json, Op, where } = require("sequelize");
 const moment = require("moment");
 const jwt = require('jsonwebtoken');
+const fs = require("fs");
+const xlsx = require("xlsx");
 
 
 module.exports = {
   // Controller function to list all employees with pagination
   getAjaxEmployee: async (req, res) => {
     try {
-      
+
       const draw = parseInt(req.body.draw) || 1; // DataTable draw counter
       const start = parseInt(req.body.start) || 0; // Start index
       const length = parseInt(req.body.length) || 10; // Records per page
@@ -22,37 +24,37 @@ module.exports = {
       const offset = start;
       const limit = length;
 
-      
+
       // Access decoded user data
       const userId = req.user.id;
       const userRole = req.user.role;
       const userName = req.user.name;
       const userEmail = req.user.email;
-      
+
       // Build the "where" clause for search
       const whereClause = searchValue
         ? {
-            [Sequelize.Op.or]: [
-              { first_name: { [Sequelize.Op.like]: `%${searchValue}%` } },
-              { last_name: { [Sequelize.Op.like]: `%${searchValue}%` } },
-              { email: { [Sequelize.Op.like]: `%${searchValue}%` } },
-            ],
-          }
+          [Sequelize.Op.or]: [
+            { first_name: { [Sequelize.Op.like]: `%${searchValue}%` } },
+            { last_name: { [Sequelize.Op.like]: `%${searchValue}%` } },
+            { email: { [Sequelize.Op.like]: `%${searchValue}%` } },
+          ],
+        }
         : {};
 
       // Fetch employees with pagination
       const { count, rows } = await User.findAndCountAll({
-        where: { ...whereClause, created_by: userId},
+        where: { ...whereClause, created_by: userId },
         // where :{ created_by: userId},
         include: [
           {
             model: Department,
-            as: 'department', 
+            as: 'department',
             attributes: ['department_name'],
           },
           {
             model: User,
-            as: 'employee', 
+            as: 'employee',
             attributes: ['first_name', 'last_name'],
           },
           {
@@ -60,7 +62,7 @@ module.exports = {
             as: 'created_by_user', // Alias for the 'created_by' relation
             attributes: ['first_name', 'last_name'], // Fetch the name of the creator
           },
-      
+
         ],
         attributes: ['id', 'first_name', 'last_name', 'email', 'role', 'created_at', 'status'],
         order: [[columns[orderColumn] || 'created_at', orderDir]],
@@ -81,7 +83,7 @@ module.exports = {
           : 'N/A',
         created_at: new Date(employee.created_at).toLocaleString(),
         status: employee.status,
-        
+
       }));
 
       // Return JSON response for DataTables
@@ -100,8 +102,6 @@ module.exports = {
   // Controller function to render the Employee List view
   getEmployeeListView: async (req, res) => {
     try {
-     
-      
       res.render('employee/employee-list', {
         title: 'Employees',
       });
@@ -111,14 +111,145 @@ module.exports = {
     }
   },
 
+  getEmpImportForm: async (req, res) => {
+    try {
+      const errorMessages = "";
+      res.render('employee/import-form', {
+        title: 'Import employees',
+        errorMessages,
+        results: ""
+      });
+    } catch (error) {
+      console.error("Error fetching employees:", error.message);
+      res.status(500).send("Internal Server Error");
+    }
+  },
+
+  importEmp: async (req, res) => {
+    try {
+      // console.log("===================req.body ================================", req.body);
+
+      const errors = validationResult(req); // Collect validation errors
+
+      if (!errors.isEmpty()) {
+        // If validation errors exist, return to the form with error messages
+        const errorMessages = errors.array().map((error) => error.msg);
+        return res.render('employee/import-form', {
+          title: "Import Employee",
+          errorMessages,
+          results: ""
+        });
+      }
+
+      // Ensure a file was uploaded
+      if (!req.file) {
+        req.flash("error", "No file uploaded.");
+        return res.redirect("/employee/import-data");
+      }
+
+      // Read the uploaded Excel file
+      const filePath = req.file.path;
+      const workbook = xlsx.readFile(filePath);
+      const sheetName = workbook.SheetNames[0]; // Read the first sheet
+      const sheetData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+      const results = {
+        inserted: 0,
+        duplicates: [],
+        invalid: [],
+      };
+      const password = '123456';
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const validData = [];
+      // Iterate through the data and process each row
+      for (const row of sheetData) {
+        const { firstName, lastName, email, postCode, address } = row;
+        const rowErrors = [];
+
+        // Validation
+        if (!firstName || firstName.trim().length === 0) rowErrors.push('First name is required');
+        if (!lastName || lastName.trim().length === 0) rowErrors.push('Last name is required');
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) rowErrors.push('Valid email is required');
+        if (!postCode || postCode.length < 5 || postCode.length > 6) rowErrors.push('Postcode must be 5-6 characters');
+
+        // Check if email already exists
+        const emailExists = await User.findOne({ where: { email } });
+        if (emailExists) {
+          results.duplicates.push(email);
+          continue;
+        }
+
+        // If errors exist, skip row
+        if (rowErrors.length > 0) {
+          results.invalid.push({ row, errors: rowErrors });
+          continue;
+        }
+    
+     
+        // Add valid data for batch insertion
+        validData.push({
+          first_name: firstName,
+          last_name: lastName,
+          password: hashedPassword,
+          email,
+          pin_code: postCode,
+          address: address,
+          department_id: req.user.departmentId,
+          role: 'Employee',
+          created_by: req.user.id,
+        });
+      }
+
+// Bulk Insert valid data
+if (validData.length > 0) {
+  const leaves = await LeaveMaster.findAll();  // Fetch the leaves
+  // Insert each user one by one to retrieve their ID
+  for (const userData of validData) {
+    const user = await User.create(userData); // Create user and get the inserted user
+
+    // Create EmployeeLeave entries for each user and each leave
+    for (const leave of leaves) {
+      await EmployeeLeave.create({
+        user_id: user.id,  // Assign leave to the user by user.id
+        leave_id: leave.id,
+        assigned_leaves: leave.no_of_leaves,
+      });
+    }
+
+    results.inserted++; // Increment the number of inserted users
+  }
+}
+
+
+      // Delete temporary file
+      fs.unlinkSync(filePath);
+
+      return res.render('employee/import-form', {
+        title: 'Import Employee',
+        success: 'Employee data processed successfully!',
+        errorMessages: "",
+        results,
+      });
+      // req.flash("success", "Employee data imported successfully!");
+      // res.redirect("/employee/import-data");
+
+    } catch (error) {
+      console.error(error);
+      req.flash("error", "Failed to add employee. Please try again.");
+      return res.redirect("/employee/import-data"); // Redirect back to form on error
+    }
+  },
+
   // Controller function to add an employee
   getAddEmpView: async (req, res) => {
     try {
-     const departments =  await Department.findAll();
-     const errorMessages= "";
-      
-      res.render("employee/employee-add", { title: 'Add employee', errorMessages,
-        userData: req.body, departments: departments });
+      const departments = await Department.findAll();
+      const errorMessages = "";
+
+      res.render("employee/employee-add", {
+        title: 'Add employee', errorMessages,
+        userData: req.body, departments: departments
+      });
     } catch (error) {
       res.status(error.status).send(error.message);
     }
@@ -127,91 +258,96 @@ module.exports = {
   getEmpDetail: async (req, res) => {
     try {
       const operationType = req.query.type;
-     const empDetail =  await User.findOne({
-      where: {id: req.params.id},
-      include : [
-        {
-          model: Department,
-          as: 'department',
-          attributes: ['id','department_name'],
-        },
-        {
-          model: User,
-          as : 'employee',
-          attributes: ['id', 'first_name','last_name'],
-        },
-        {
-          model: User,
-          as : 'created_by_user',
-          attributes: ['id', 'first_name','last_name'],
-        }
-      ],
-      attributes: ['id', 'first_name', 'last_name', 'email', 'role' ,'status', 'pin_code', 'address']
-     });
-    
-    
-     // get employee leaves
-     const empLeaveData = await EmployeeLeave.findAll({
-      where: {user_id : req.params.id},
-      include:[
-        {
-          model: LeaveMaster,
-          as: 'leave',
-          attributes: ['id', 'leave_type']
-        }
-      ]
-
-     });
-
-
-     console.log("=================== leaveRequests call===================")
-     const leaveRequests = await LeaveApplication.findAll({
-      where: { user_id: req.params.id },
-      include: [
+      const empDetail = await User.findOne({
+        where: { id: req.params.id },
+        include: [
           {
-              model: LeaveMaster,
-              as: 'LeaveType', // Ensure this matches the alias in the association
-              attributes: ['id', 'leave_type', 'no_of_leaves'],
+            model: Department,
+            as: 'department',
+            attributes: ['id', 'department_name'],
           },
-      ],
-  });
+          {
+            model: User,
+            as: 'employee',
+            attributes: ['id', 'first_name', 'last_name'],
+          },
+          {
+            model: User,
+            as: 'created_by_user',
+            attributes: ['id', 'first_name', 'last_name'],
+          }
+        ],
+        attributes: ['id', 'first_name', 'last_name', 'email', 'role', 'status', 'pin_code', 'address']
+      });
 
-    // manage leaves reqs data 
-    const leaveReqs = await Promise.all(
-      leaveRequests.map(async (leaveReq) => {
-        const getApproverdata = await User.findOne({
-          where: {id: leaveReq.handled_by }
+
+      // get employee leaves
+      const empLeaveData = await EmployeeLeave.findAll({
+        where: { user_id: req.params.id },
+        include: [
+          {
+            model: LeaveMaster,
+            as: 'leave',
+            attributes: ['id', 'leave_type']
+          }
+        ]
+
+      });
+
+
+      console.log("=================== leaveRequests call===================")
+      const leaveRequests = await LeaveApplication.findAll({
+        where: { user_id: req.params.id },
+        include: [
+          {
+            model: LeaveMaster,
+            as: 'LeaveType', // Ensure this matches the alias in the association
+            attributes: ['id', 'leave_type', 'no_of_leaves'],
+          },
+        ],
+      });
+
+      // manage leaves reqs data 
+      const leaveReqs = await Promise.all(
+        leaveRequests.map(async (leaveReq) => {
+          const getApproverdata = await User.findOne({
+            where: { id: leaveReq.handled_by }
+          });
+          return {
+            ...leaveReq.toJSON(),
+            approver: getApproverdata ? getApproverdata.toJSON() : null,
+          }
+        })
+
+      );
+
+      if (operationType == 'view') {
+        res.render("employee/employee-view", {
+          title: 'Eemployee detail',
+          empDetail: empDetail, empLeaveData: empLeaveData, leaveRequests: leaveReqs, moment: moment
         });
-        return {
-          ...leaveReq.toJSON(),
-          approver: getApproverdata ?  getApproverdata.toJSON() : null,
-        }
-      })
-      
-    );
+      }
+      else {
+        const departments = await Department.findAll();
+        const errorMessages = "";
+        res.render("employee/employee-edit", {
+          title: 'Eemployee edit',
+          empDetail: empDetail, empLeaveData: empLeaveData, errorMessages: errorMessages, departments: departments
+        });
+      }
 
-     if(operationType == 'view'){
-      res.render("employee/employee-view", { title: 'Eemployee detail',
-        empDetail: empDetail, empLeaveData: empLeaveData, leaveRequests: leaveReqs, moment: moment });
-     }
-     else{
-      const departments =  await Department.findAll();
-      const errorMessages= "";
-      res.render("employee/employee-edit", { title: 'Eemployee edit',
-        empDetail: empDetail, empLeaveData: empLeaveData, errorMessages:errorMessages, departments: departments });
-     }
-     
     } catch (error) {
       res.status(error.status).send(error.message);
     }
   },
+
   addEmp: async (req, res) => {
     try {
       console.log("===================req.body ================================", req.body);
-  
+
       const errors = validationResult(req); // Collect validation errors
       const departments = await Department.findAll(); // Get list of departments
-      
+
       if (!errors.isEmpty()) {
         // If validation errors exist, return to the form with error messages
         const errorMessages = errors.array().map((error) => error.msg);
@@ -222,39 +358,39 @@ module.exports = {
           userData: req.body, // Pre-fill form with submitted data
         });
       }
-  
+
       const { firstName, lastName, email, password, passwordConfirm, department } = req.body;
-     // Hash the password
+      // Hash the password
       const hashedPassword = await bcrypt.hash(password, 10);
-      
+
       // Fetch the manager of the selected department
       const manager = await User.findOne({
-        where: {id: req.user.id},
+        where: { id: req.user.id },
         include: [{
           model: Department,
           as: 'department',
           attributes: ['id']
         }]
-      }); 
-      
+      });
+
       if (!manager) {
         req.flash("error", "No manager found for this department.");
         return res.redirect("/employee/add-emp"); // Redirect back to form if no manager found
       }
-  
+
       // Check if the employee email already exists
       const checkEmpEmail = async (email) => {
         return await User.findOne({
           where: { email: email }
         });
       };
-  
+
       const emailCheck = await checkEmpEmail(email);
       if (emailCheck) {
         req.flash("error", "This email " + email + " already exists.");
         return res.redirect("/employee/add-emp"); // Redirect back to form if email exists
       }
-  
+
       // Create the new employee
       await User.create({
         first_name: firstName,
@@ -264,34 +400,35 @@ module.exports = {
         role: 'Employee',
         department_id: manager.department.id,
         created_by: manager.id, // Assign the manager's ID to the employee
-      }).then(async function(emp){
-            const leaves = await LeaveMaster.findAll();
-            leaves.forEach(async (leave) => {
-              await EmployeeLeave.create({
-                user_id : emp.id,
-                user_role : emp.role,
-                leave_id : leave.id,
-                assigned_leaves : leave.no_of_leaves
-              });
-            });
+      }).then(async function (emp) {
+        const leaves = await LeaveMaster.findAll();
+        leaves.forEach(async (leave) => {
+          await EmployeeLeave.create({
+            user_id: emp.id,
+            user_role: emp.role,
+            leave_id: leave.id,
+            assigned_leaves: leave.no_of_leaves
+          });
+        });
       });
-  
+
       req.flash("success", "Employee added successfully!");
       return res.redirect("/employee"); // Redirect back to the form after success
-  
+
     } catch (error) {
       console.error(error);
       req.flash("error", "Failed to add employee. Please try again.");
       return res.redirect("/employee/add-emp"); // Redirect back to form on error
     }
   },
+
   editEmp: async (req, res) => {
     try {
       console.log("===================req.body ================================", req.body);
-  
+
       const errors = validationResult(req); // Collect validation errors
       const departments = await Department.findAll(); // Get list of departments
-  
+
       if (!errors.isEmpty()) {
         // If validation errors exist, return to the form with error messages
         const errorMessages = errors.array().map((error) => error.msg);
@@ -302,33 +439,35 @@ module.exports = {
           userData: req.body, // Pre-fill form with submitted data
         });
       }
-  
+
       const { firstName, lastName, email, empId } = req.body;
-  
-  
+
+
       // Check if the employee email already exists
       const checkEmpEmail = async (email) => {
         return await User.findOne({
-          where: { email: email,  id: { [Op.not]: empId },
-        }});
+          where: {
+            email: email, id: { [Op.not]: empId },
+          }
+        });
       };
-  
+
       const emailCheck = await checkEmpEmail(email);
       if (emailCheck) {
         req.flash("error", "This email " + email + " already exists.");
         return res.redirect(`/employee/edit-emp/${empId}?type=edit`);
       }
-  
+
       // update the employee
-      const getUserData = async(empId) =>{
+      const getUserData = async (empId) => {
         return await User.findOne({
-          where : {id: empId}
+          where: { id: empId }
         });
       };
 
       const updateData = await getUserData(empId);
-   
-      if(updateData){
+
+      if (updateData) {
         updateData.first_name = firstName;
         updateData.last_name = lastName;
         updateData.email = email;
@@ -338,22 +477,23 @@ module.exports = {
       req.flash("success", "Employee updated successfully!");
       return res.redirect(`/employee`);
 
-  
+
     } catch (error) {
       console.error(error);
       req.flash("error", "Failed to add employee. Please try again.");
       return res.redirect("/employee"); // Redirect back to form on error
     }
   },
+
   deleteEmp: async (req, res) => {
     try {
       const empId = req.params.id;
-  
+
       const employee = await User.findOne({ where: { id: empId } });
       if (!employee) {
         return res.status(404).json({ success: false, message: 'Employee not found' });
       }
-      
+
       await User.update(
         { deleted_at: new Date() },
         { where: { id: empId } }
@@ -365,5 +505,5 @@ module.exports = {
       res.status(500).json({ success: false, message: 'Failed to mark the employee as deleted' });
     }
   }
-  
+
 };

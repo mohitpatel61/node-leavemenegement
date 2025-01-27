@@ -106,68 +106,17 @@
                                         </div>
 
                                         <!-- Leave Requests Section -->
-                                        <% if (leaveRequests.length> 0) { %>
-                                            <div class="card shadow-lg border-0 rounded-lg mt-5">
-                                                <div class="card-header">
-                                                    <h3 class="text-center font-weight-light my-4">Leave Requests</h3>
-                                                </div>
-                                                <div class="card-body">
-                                                    <% leaveRequests.forEach(function(leaveReq) { %>
-                                                        <div class="leave-request-section mb-4">
-                                                            <div class="row mb-2">
-                                                                <div class="col-md-6">
-                                                                    <strong>Leave Type:</strong>
-                                                                    <%= leaveReq.LeaveType.leave_type %>
-                                                                </div>
-                                                                <div class="col-md-6">
-                                                                    <strong>Total Applied Leaves:</strong>
-                                                                    <%= leaveReq.total_days %>
-                                                                </div>
-                                                            </div>
-                                                            <div class="row mb-2">
-                                                                <div class="col-md-12">
-                                                                    <strong>Leave Duration:</strong>
-                                                                    From <%= leaveReq.leave_from ?
-                                                                        moment(leaveReq.leave_from).format('DD-MM-YYYY')
-                                                                        : 'N/A' %>
-                                                                        To <%= leaveReq.leave_to ?
-                                                                            moment(leaveReq.leave_to).format('DD-MM-YYYY')
-                                                                            : 'N/A' %>
-                                                                </div>
-                                                            </div>
-                                                            <div class="row mb-2">
-                                                                <div class="col-md-12">
-                                                                    <strong>Reason:</strong>
-                                                                    <%= leaveReq.reason %>
-                                                                </div>
-                                                            </div>
-                                                            <div class="row mb-2">
-                                                                <div class="col-md-6">
-                                                                    <strong>Status:</strong>
-                                                                    <% if(leaveReq.status==='Pending' ) { %>
-                                                                        <span
-                                                                            class="badge bg-warning text-dark">Pending</span>
-                                                                        <% } else if(leaveReq.status==='Approved' ) { %>
-                                                                            <span
-                                                                                class="badge bg-success">Approved</span>
-                                                                            <% } else { %>
-                                                                                <span
-                                                                                    class="badge bg-danger">Rejected</span>
-                                                                                <% } %>
-                                                                </div>
-                                                                <div class="col-md-6">
-                                                                    <strong>Approver:</strong>
-                                                                    <%= leaveReq.approver.first_name %>
-                                                                        <%= leaveReq.approver.last_name %> (<%=
-                                                                                leaveReq.approver.role %>)
-                                                                </div>
-                                                            </div>
-                                                            <hr>
-                                                        </div>
-                                                        <% }); %>
-                                                </div>
+                                        <!-- <% if (leaveRequests.length> 0) { %> -->
+                                        <div class="card shadow-lg border-0 rounded-lg mt-5">
+                                            <div class="card-header">
+                                                <h3 class="text-center font-weight-light my-4">Leave Requests</h3>
                                             </div>
-                                            <% } %>
+                                            <input type="hidden" id="totalLeaveReqLimitFrom" value="0">
+                                            <div class="card-body leave-requests">
+                                            </div>
+                                            <button id="loadMoreReqs" class="btn btn-success col-md-2 text-center" style="display:none;">Load More</button>
+                                        </div>
+                                        <!-- <% } %> -->
 
                                     </div>
                                 </div>
@@ -179,15 +128,173 @@
         </div>
     </div>
 
-
-
+    <script src="/js/moment.min.js"></script>
     <script>
-        $(document).ready(function () {
+
+$(document).ready(function () {
+    // Initially load 5 leave requests (0 to 5)
+    getAllLeaveReqs(false);
+
+    // Load more notifications
+    $('#loadMoreReqs').on('click', function () {
+        getAllLeaveReqs(true);  // Get next set of 5 records
+    });
+
+    // Fetch leave requests with pagination
+    function getAllLeaveReqs(isLoadMore = false) {
+       
+        let limitTo = 5; // Always load 5 records for each request
+
+        if (isLoadMore) {
+            $("#totalLeaveReqLimitFrom").val(parseInt($('#totalLeaveReqLimitFrom').val())+5);
+        }
+
+        let limitFrom = parseInt($('#totalLeaveReqLimitFrom').val()); // Current starting index (limitFrom)
+      
+
+        $.ajax({
+            method: 'GET',
+            url: '/leaves/get-my-leave-reqs',  // API endpoint
+            data: { limitFrom: limitFrom, limitTo: limitTo },
+            beforeSend: function () {
+                if (!isLoadMore) {
+                    // Initial request, show loading message
+                    $('.leave-requests').html('<p class="text-center py-2">Loading requests...</p>');
+                    $('#loadMoreReqs').hide(); // Hide the button while loading
+                }
+            },
+            success: function (response) {
+                const allLeaveRequests = response.allLeaveRequests || [];
+                let htmlContent = "";
+                
+                if (allLeaveRequests.length > 0) {
+                    allLeaveRequests.forEach(leaveReq => {
+                        const leaveType = leaveReq.LeaveType?.leave_type || 'N/A';
+                        const totalDays = leaveReq.total_days || 'N/A';
+                        const leaveFrom = leaveReq.leave_from
+                            ? moment(leaveReq.leave_from).format('DD-MM-YYYY')
+                            : 'N/A';
+                        const leaveTo = leaveReq.leave_to
+                            ? moment(leaveReq.leave_to).format('DD-MM-YYYY')
+                            : 'N/A';
+                        const reason = leaveReq.reason || 'No reason provided';
+                        const status = leaveReq.status || 'Unknown';
+                        const approverName = leaveReq.Handler
+                            ? `${leaveReq.Handler.first_name} ${leaveReq.Handler.last_name}`
+                            : 'N/A';
+                        const approverRole = leaveReq.Handler?.role || 'N/A';
+
+                        const badgeClass = status === 'Pending'
+                            ? 'badge bg-warning text-dark'
+                            : status === 'Approved'
+                                ? 'badge bg-success'
+                                : 'badge bg-danger';
+                                let cancelReqHtml = "";
+                        if(status === 'Pending'){
+                             cancelReqHtml += `<div class="col-md-6">
+                                    <strong>Cancel leave request:</strong> 
+                                    <textarea name="cancelReq" id="cancelLeaveReq_${leaveReq.id}" class="form-control"></textarea>
+                                    <input type="button" data-req-id=${leaveReq.id} class="btn btn-danger mt-2 cancelLeaveReq" value="Cancel">
+                                </div>`;
+                        }
+                        
+                        htmlContent += `
+                        <div class="leave-request-section mb-4">
+                            <div class="row mb-2">
+                                <div class="col-md-6">
+                                    <strong>Leave Type:</strong> ${leaveType}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Total Applied Leaves:</strong> ${totalDays}
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-12">
+                                    <strong>Leave Duration:</strong> From ${leaveFrom} To ${leaveTo}
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-12">
+                                    <strong>Reason:</strong> ${reason}
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-6">
+                                    <strong>Status:</strong> 
+                                    <span class="${badgeClass}">${status}</span>
+                                </div>
+                            
+                               
+                                <div class="col-md-6">
+                                    <strong>Approver:</strong> ${approverName} (${approverRole})
+                                </div>
+                               
+                            </div>
+                            <div class="row mb-2">
+                                     ${cancelReqHtml} 
+                                </div>
+                            <hr> 
+                        </div>`;
+                    });
+                    
+                    // Append the new content to the HTML if loading more
+                    if (isLoadMore) {
+                        $('.leave-requests').append(htmlContent);
+                    } else {
+                        $('.leave-requests').html(htmlContent); // First load
+                    }
+
+                    // Handle on cancel request
+                    
+                    $('.cancelLeaveReq').on("click", function(){
+                      const comment = $('#cancelLeaveReq_'+$(this).attr('data-req-id')).val();
+                      $.ajax({
+                          method: 'POST',
+                          url: '/leaves/update-req-status',  // API endpoint
+                          data: { status: "Reject", reqId: $(this).attr('data-req-id'), comment: comment, rejectBySelf: true },
+                        
+                          success: function (response) {
+                            getAllLeaveReqs(false);
+                            setTimeout(function(){
+                                location.reload();
+                            },20000);
+                          },
+                      });
+                  });
+
+                    // Handle "Load More" button visibility
+                    if (response.total >  limitFrom+5) {
+                        $('#loadMoreReqs').show(); // Show if there are more records to load
+                    } else {
+                        $('#loadMoreReqs').hide(); // Hide if no more records to load
+                    }
+                } else {
+                    htmlContent = '<p class="text-center py-2">No leave requests found.</p>';
+                    if (isLoadMore) {
+                        $('.leave-requests').append(htmlContent);
+                    } else {
+                        $('.leave-requests').html(htmlContent);
+                    }
+                    $('#loadMoreReqs').hide(); // Hide the button if no requests are found
+                }
+            },
+            error: function (error) {
+                console.error("Error fetching leave requests:", error);
+                if (!isLoadMore) {
+                    $('.leave-requests').html('<p class="text-center py-2">Error loading leave requests.</p>');
+                }
+            }
+        });
+    }
+
+ 
+
+
             // Set default date for all leave applications
             let today = new Date().toISOString().split('T')[0];
             $('input[name="from_date"], input[name="to_date"]').val(today);
 
-             // Set default total_days as 1 for each leave application on page load
+            // Set default total_days as 1 for each leave application on page load
             $('[id^="approveDiv"]').each(function () {
                 const leaveId = $(this).data('leave-id');
                 const totalDaysInput = $(`#total_days_${leaveId}`);
@@ -226,7 +333,7 @@
                 }
             });
         });
-        
+
 
         function calculateDateDifference(fromDate, toDate) {
             if (!fromDate || !toDate) {

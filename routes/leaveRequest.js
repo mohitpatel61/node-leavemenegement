@@ -11,6 +11,7 @@ router.get('/mark-as-read-notifications', authorize(['Admin','Employee','Manager
 
 router.get("/leave-reqs",authorize(['Admin','Manager','Employee']), leaveRequestController.getLeaveReqsListView);
 router.get("/my-leaves",authorize(['Manager','Employee']), leaveRequestController.getEmpLeavesView);
+router.get("/get-my-leave-reqs",authorize(['Manager','Employee']), leaveRequestController.getAjaxLeaveReqs);
 router.post("/leave-req-ajax", authorize(['Admin','Manager','Employee']), leaveRequestController.getAjaxLeaveReq);
 
 router.post("/update-req-status",authorize(['Admin','Manager','Employee']), leaveRequestController.updateLeaveReqStatus);

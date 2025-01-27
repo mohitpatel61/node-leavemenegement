@@ -11,6 +11,7 @@ router.get("/",authorize('Admin'), managerController.getManagerListView);
 router.post("/manager-ajax",authorize('Admin'), managerController.getAjaxManager);
 
 router.get("/add-manager",authorize('Admin'), managerController.addManagerView);
+
 router.post(
     "/add-manager",authorize('Admin'),
     [

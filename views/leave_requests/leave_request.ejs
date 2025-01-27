@@ -11,6 +11,21 @@
                 Leave Requests
             </div>
             <div class="card-body">
+                <!-- Add Date Filter -->
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label for="fromDate" class="form-label">From Date:</label>
+                        <input type="date" id="fromDate" class="form-control" />
+                    </div>
+                    <div class="col-md-3">
+                        <label for="toDate" class="form-label">To Date:</label>
+                        <input type="date" id="toDate" class="form-control" />
+                    </div>
+                    <div class="col-md-2 align-self-end">
+                        <button id="applyFilter" class="btn btn-primary w-100">Apply Filter</button>
+                    </div>
+                </div>
+                
                 <table id="leave-reqs-table">
                     <thead>
                         <tr>
@@ -27,39 +42,7 @@
                     </tbody>
                 </table>
                 <script src="/js/datatable-config.js"></script>
-                <script>
-
-                    // Initialize DataTable with default settings
-                    const columns = [
-                        { data: 'created_at' },
-                        { data: 'department' },
-                        { data: 'requestername' },
-                        { data: 'leave_type' },
-                        {
-                            data: 'status',
-                            render: function (data, type, row) {
-                                if (data === 'Pending') {
-                                    return `<button class="btn btn-warning btn-sm">Pending</button>`;
-                                } else if (data === 'Approved') {
-                                    return `<button class="btn btn-success btn-sm">Approved</button>`;
-                                } else if (data === 'Rejected') {
-                                    return `<button class="btn btn-danger btn-sm">Rejected</button>`;
-                                } else {
-                                    return `<button class="btn btn-secondary btn-sm">Unknown</button>`;
-                                }
-                            }
-                        },
-
-                        {
-                            data: 'id',
-                            render: function (data, type, row) {
-
-                                return `<a class="btn btn-sm btn-info" href="/leaves/leave-req-detail/${data}">View</a>`;
-                            }
-                        }
-                    ];
-                    initializeDataTable('#leave-reqs-table', '/leaves/leave-req-ajax', columns);
-                </script>
+                <script src="/js/leave-req/leave-req.js"></script>
             </div>
         </div>
     </div>
